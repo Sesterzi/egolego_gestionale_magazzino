@@ -1,0 +1,1 @@
+# egolego_gestionale_magazzino
