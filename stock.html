@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Magazzino - Gestionale Magazzino</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🏭 Gestionale Magazzino</div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="materie-prime.html">Materie Prime</a>
+            <a href="carico.html">Carico</a>
+            <a href="scarico.html">Scarico</a>
+            <a href="stock.html" class="active">Stock</a>
+            <a href="api.html">API</a>
+            <button id="logoutBtn" class="btn btn-sm btn-danger">Logout</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1>Stock Disponibile</h1>
+            <button id="exportBtn" class="btn btn-secondary">📥 Esporta CSV</button>
+        </div>
+        
+        <div class="stats-grid" style="margin-bottom: 30px;">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-content">
+                    <div class="stat-label">Totale SKU</div>
+                    <div class="stat-value" id="totaleSku">0</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🔢</div>
+                <div class="stat-content">
+                    <div class="stat-label">Totale Pezzi</div>
+                    <div class="stat-value" id="totalePezzi">0</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <div class="stat-label">Valore Totale</div>
+                    <div class="stat-value" id="valoreTotale">€ 0,00</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-content">
+                    <div class="stat-label">Stock Basso (< 10)</div>
+                    <div class="stat-value" id="stockBasso">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="filters">
+            <div class="filters-row">
+                <div class="form-group">
+                    <label for="searchCodice">Cerca per Codice</label>
+                    <input type="text" id="searchCodice" placeholder="Inserisci codice...">
+                </div>
+                <div class="form-group">
+                    <label for="filterStatus">Filtra per Stato</label>
+                    <select id="filterStatus">
+                        <option value="">Tutti</option>
+                        <option value="ok">Stock OK (≥ 10)</option>
+                        <option value="basso">Stock Basso (< 10)</option>
+                        <option value="critico">Stock Critico (< 5)</option>
+                        <option value="esaurito">Esaurito (0)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button id="filterBtn" class="btn btn-primary">🔍 Filtra</button>
+                    <button id="resetBtn" class="btn btn-secondary">🔄 Reset</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="stockTable" class="table-container">
+            <p class="empty-state">Caricamento...</p>
+        </div>
+    </div>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/stock.js"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionale Magazzino - Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🏭 Gestionale Magazzino</div>
+        <div class="nav-links">
+            <a href="dashboard.html" class="active">Dashboard</a>
+            <a href="materie-prime.html">Materie Prime</a>
+            <a href="carico.html">Carico</a>
+            <a href="scarico.html">Scarico</a>
+            <a href="stock.html">Stock</a>
+            <a href="api.html">API</a>
+            <button id="logoutBtn" class="btn btn-sm btn-danger">Logout</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>Dashboard</h1>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-content">
+                    <div class="stat-label">Materie Prime</div>
+                    <div class="stat-value" id="totalMaterie">0</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-content">
+                    <div class="stat-label">Carichi Totali</div>
+                    <div class="stat-value" id="totalCarichi">0</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📉</div>
+                <div class="stat-content">
+                    <div class="stat-label">Scarichi Totali</div>
+                    <div class="stat-value" id="totalScarichi">0</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🏪</div>
+                <div class="stat-content">
+                    <div class="stat-label">Valore Stock</div>
+                    <div class="stat-value" id="valoreTotale">€ 0,00</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-sections">
+            <div class="section">
+                <h2>Ultimi Carichi</h2>
+                <div id="ultimiCarichi" class="table-container">
+                    <p class="empty-state">Caricamento...</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Ultimi Scarichi</h2>
+                <div id="ultimiScarichi" class="table-container">
+                    <p class="empty-state">Caricamento...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Stock con Giacenza Bassa (< 10 pezzi)</h2>
+            <div id="stockBasso" class="table-container">
+                <p class="empty-state">Caricamento...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scarico Magazzino - Gestionale Magazzino</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🏭 Gestionale Magazzino</div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="materie-prime.html">Materie Prime</a>
+            <a href="carico.html">Carico</a>
+            <a href="scarico.html" class="active">Scarico</a>
+            <a href="stock.html">Stock</a>
+            <a href="api.html">API</a>
+            <button id="logoutBtn" class="btn btn-sm btn-danger">Logout</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>Scarico Magazzino</h1>
+        
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+            <!-- Form Nuovo Scarico -->
+            <div class="card">
+                <h2>Nuovo Scarico</h2>
+                
+                <div id="message" style="display: none;"></div>
+                
+                <form id="scaricoForm">
+                    <div class="form-group">
+                        <label for="numeroOrdine">Numero Ordine *</label>
+                        <input type="text" id="numeroOrdine" required placeholder="es. ORD-2024-001">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="codiceMateriale">Codice Materiale *</label>
+                        <select id="codiceMateriale" required>
+                            <option value="">Seleziona...</option>
+                        </select>
+                    </div>
+                    
+                    <div id="stockInfo" style="display: none; padding: 12px; background: #f1f5f9; border-radius: 6px; margin-bottom: 16px;">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <img id="stockInfoFoto" class="image-preview" alt="Foto materiale" style="display: none;">
+                            <div style="flex: 1;">
+                                <div><strong>Colore:</strong> <span id="stockInfoColore"></span></div>
+                                <div><strong>Part Number:</strong> <span id="stockInfoPartNumber"></span></div>
+                                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color);">
+                                    <strong>Disponibili:</strong> 
+                                    <span id="stockInfoQty" style="font-size: 18px; color: var(--primary-color);">0</span> pz
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="quantita">Quantità da Scaricare *</label>
+                        <input type="number" id="quantita" required min="1" step="1" placeholder="es. 10">
+                        <small id="qtyWarning" style="color: var(--danger-color); display: none;">Attenzione: quantità superiore allo stock!</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="note">Note</label>
+                        <textarea id="note" rows="3" placeholder="Note aggiuntive..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-danger btn-block">📤 Scarica da Magazzino</button>
+                </form>
+                
+                <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                    <h3 style="margin-bottom: 16px; font-size: 16px;">Scarico Multiplo</h3>
+                    <button id="scaricoMultiploBtn" class="btn btn-secondary btn-block">📋 Distinta Multipla</button>
+                </div>
+            </div>
+            
+            <!-- Storico Scarichi -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2>Storico Scarichi</h2>
+                    <button id="exportBtn" class="btn btn-secondary">📥 Esporta CSV</button>
+                </div>
+                
+                <div class="filters">
+                    <div class="filters-row">
+                        <div class="form-group">
+                            <label for="filterOrdine">Filtra per Ordine</label>
+                            <input type="text" id="filterOrdine" placeholder="es. ORD-2024-001">
+                        </div>
+                        <div class="form-group">
+                            <label for="filterCodice">Filtra per Codice</label>
+                            <select id="filterCodice">
+                                <option value="">Tutti</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="filterData">Filtra per Data</label>
+                            <input type="date" id="filterData">
+                        </div>
+                        <div class="form-group">
+                            <button id="filterBtn" class="btn btn-primary">🔍 Filtra</button>
+                            <button id="resetBtn" class="btn btn-secondary">🔄 Reset</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="scarichiTable" class="table-container">
+                    <p class="empty-state">Caricamento...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Scarico Multiplo -->
+    <div id="scaricoMultiploModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Scarico Multiplo - Distinta Parti</h2>
+                <button class="modal-close" onclick="closeMultiploModal()">&times;</button>
+            </div>
+            
+            <form id="scaricoMultiploForm">
+                <div class="form-group">
+                    <label for="numeroOrdineMultiplo">Numero Ordine *</label>
+                    <input type="text" id="numeroOrdineMultiplo" required placeholder="es. ORD-2024-001">
+                </div>
+                
+                <h3 style="margin: 24px 0 16px;">Distinta Parti</h3>
+                
+                <div id="distinteContainer">
+                    <div class="distinta-row" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <select class="materiale-select" required>
+                                <option value="">Seleziona materiale...</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <input type="number" class="quantita-input" required min="1" placeholder="Quantità">
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeDistintaRow(this)" style="visibility: hidden;">🗑️</button>
+                    </div>
+                </div>
+                
+                <button type="button" id="addDistintaBtn" class="btn btn-secondary" style="margin-top: 12px;">➕ Aggiungi Materiale</button>
+                
+                <div id="multiploMessage" style="display: none; margin-top: 16px;"></div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeMultiploModal()">Annulla</button>
+                    <button type="submit" class="btn btn-danger">📤 Scarica Tutti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/scarico.js"></script>
+</body>
+</html>

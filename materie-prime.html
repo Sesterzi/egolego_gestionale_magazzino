@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materie Prime - Gestionale Magazzino</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🏭 Gestionale Magazzino</div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="materie-prime.html" class="active">Materie Prime</a>
+            <a href="carico.html">Carico</a>
+            <a href="scarico.html">Scarico</a>
+            <a href="stock.html">Stock</a>
+            <a href="api.html">API</a>
+            <button id="logoutBtn" class="btn btn-sm btn-danger">Logout</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1>Gestione Materie Prime</h1>
+            <div style="display: flex; gap: 12px;">
+                <button id="cleanupBtn" class="btn btn-danger" onclick="window.location.href='cleanup-materie-prime.html'" title="Elimina tutti i record dal database">🗑️ Pulisci Database</button>
+                <button id="importBtn" class="btn btn-success">📤 Importa CSV/Excel</button>
+                <button id="exportBtn" class="btn btn-secondary">📥 Esporta CSV</button>
+                <button id="addBtn" class="btn btn-primary">➕ Nuova Materia Prima</button>
+            </div>
+        </div>
+        
+        <div id="message" style="display: none;"></div>
+        
+        <div class="filters">
+            <div class="filters-row">
+                <div class="form-group">
+                    <label for="searchTerm">Cerca</label>
+                    <input type="text" id="searchTerm" placeholder="Cerca per codice, part number, codice colore o colore...">
+                    <small style="color: var(--secondary-color);">La ricerca funziona su tutti i campi</small>
+                </div>
+                <div class="form-group">
+                    <button id="searchBtn" class="btn btn-primary">🔍 Cerca</button>
+                    <button id="resetBtn" class="btn btn-secondary">🔄 Reset</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="materiePrimeTable" class="table-container">
+            <p class="empty-state">Caricamento...</p>
+        </div>
+    </div>
+    
+    <!-- Modal Aggiungi/Modifica -->
+    <div id="materiaPrimaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuova Materia Prima</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <form id="materiaPrimaForm">
+                <input type="hidden" id="materiaId">
+                
+                <div class="form-group">
+                    <label for="codice">Codice Materiale *</label>
+                    <input type="text" id="codice" required placeholder="es. MAT-001">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="partNumber">Part Number *</label>
+                        <input type="text" id="partNumber" required placeholder="es. PN-12345">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="codiceColore">Codice Colore *</label>
+                        <input type="text" id="codiceColore" required placeholder="es. RAL9005">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="colore">Nome Colore *</label>
+                    <input type="text" id="colore" required placeholder="es. Nero">
+                </div>
+                
+                <div class="form-group">
+                    <label for="fotoUrl">URL Foto</label>
+                    <input type="url" id="fotoUrl" placeholder="https://esempio.com/foto.jpg">
+                    <small style="color: var(--secondary-color);">Inserisci l'URL di un'immagine già caricata online</small>
+                </div>
+                
+                <div id="fotoPreview" style="margin-top: 12px; display: none;">
+                    <img id="previewImage" class="image-preview-large" alt="Anteprima">
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annulla</button>
+                    <button type="submit" class="btn btn-primary">Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Import CSV -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Importa Materie Prime da CSV/Excel</h2>
+                <button class="modal-close" onclick="closeImportModal()">&times;</button>
+            </div>
+            
+            <div style="background: #fef3c7; padding: 16px; border-radius: 6px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 12px; font-size: 16px;">📋 Formato File Richiesto</h3>
+                <p style="margin-bottom: 8px;">Il file CSV o Excel deve contenere le seguenti colonne (con intestazione):</p>
+                <div class="code-block" style="margin-bottom: 12px;">codice,part_number,codice_colore,foto_url,colore</div>
+                <p style="margin-bottom: 8px;"><strong>Tutti i campi sono OBBLIGATORI:</strong></p>
+                <ul style="margin: 8px 0 12px 20px; font-size: 14px;">
+                    <li><strong>codice</strong> → Codice materiale univoco</li>
+                    <li><strong>part_number</strong> → Part number prodotto</li>
+                    <li><strong>codice_colore</strong> → Codice identificativo colore (es. RAL9005)</li>
+                    <li><strong>foto_url</strong> → URL immagine del materiale</li>
+                    <li><strong>colore</strong> → Nome colore (es. Nero, Bianco)</li>
+                </ul>
+                <p style="margin-bottom: 8px;"><strong>Esempio:</strong></p>
+                <div class="code-block">codice,part_number,codice_colore,foto_url,colore
+MAT-001,PN-12345,RAL9005,https://esempio.com/foto1.jpg,Nero
+MAT-002,PN-12346,RAL9016,https://esempio.com/foto2.jpg,Bianco
+MAT-003,PN-12347,RAL3020,https://esempio.com/foto3.jpg,Rosso</div>
+                <p style="margin-top: 12px; margin-bottom: 0;"><strong>Note:</strong></p>
+                <ul style="margin: 8px 0 0 20px; font-size: 14px;">
+                    <li>Usa virgola (,) come separatore</li>
+                    <li>Prima riga: intestazione colonne</li>
+                    <li><strong>Tutti i 5 campi devono essere compilati</strong></li>
+                    <li><strong>"0" è un valore valido</strong> per codice_colore (es. sistema di codifica colori)</li>
+                    <li>Encoding: UTF-8</li>
+                </ul>
+            </div>
+            
+            <div style="background: #e0f2fe; padding: 16px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #0284c7;">
+                <h3 style="margin-bottom: 8px; font-size: 16px;">ℹ️ Come Funziona l'Import</h3>
+                <p style="margin-bottom: 8px; font-size: 14px;">Il sistema importa <strong>solo materiali con codice nuovo</strong>:</p>
+                <ul style="margin: 8px 0 8px 20px; font-size: 14px;">
+                    <li>✅ <strong>Codice NON presente</strong> → Materiale viene importato</li>
+                    <li>⚠️ <strong>Codice già esistente</strong> → Riga viene saltata (dati esistenti non modificati)</li>
+                </ul>
+                <p style="margin: 8px 0 0 0; font-size: 13px; color: #0369a1;">
+                    <strong>Esempio:</strong> Se hai MAT-001 nel database e lo reimporti, viene saltato. 
+                    Questo protegge i dati esistenti da sovrascritture accidentali.
+                </p>
+            </div>
+            
+            <div class="form-group">
+                <label for="csvFile">Seleziona File CSV o Excel</label>
+                <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" style="padding: 8px;">
+                <small style="color: var(--secondary-color); display: block; margin-top: 4px;">Formati supportati: CSV, XLSX, XLS</small>
+            </div>
+            
+            <div id="importPreview" style="display: none; margin-top: 20px;">
+                <h3 style="margin-bottom: 12px;">Anteprima Dati (prime 5 righe)</h3>
+                <div id="previewTable" class="table-container" style="max-height: 300px; overflow-y: auto;"></div>
+                <div style="margin-top: 12px; padding: 12px; background: #e0f2fe; border-radius: 6px;">
+                    <strong>Totale righe da importare:</strong> <span id="totalRows">0</span>
+                </div>
+            </div>
+            
+            <div id="importMessage" style="display: none; margin-top: 16px;"></div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Annulla</button>
+                <button type="button" id="previewBtn" class="btn btn-primary" onclick="previewCSV()">👁️ Anteprima</button>
+                <button type="button" id="importConfirmBtn" class="btn btn-success" style="display: none;" onclick="confirmImport()">✅ Importa Tutto</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="js/materie-prime.js"></script>
+</body>
+</html>

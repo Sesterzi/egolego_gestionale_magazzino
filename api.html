@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API - Gestionale Magazzino</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🏭 Gestionale Magazzino</div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="materie-prime.html">Materie Prime</a>
+            <a href="carico.html">Carico</a>
+            <a href="scarico.html">Scarico</a>
+            <a href="stock.html">Stock</a>
+            <a href="api.html" class="active">API</a>
+            <button id="logoutBtn" class="btn btn-sm btn-danger">Logout</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>Documentazione API</h1>
+        
+        <div class="card" style="background: #fef3c7; border-left: 4px solid #f59e0b;">
+            <h3 style="margin-bottom: 12px;">ℹ️ Informazioni Importanti</h3>
+            <p style="margin-bottom: 8px;">Questa sezione documenta le API RESTful disponibili per l'integrazione con sistemi esterni.</p>
+            <p style="margin-bottom: 8px;"><strong>Base URL:</strong> <code style="background: white; padding: 2px 8px; border-radius: 4px;">/tables/</code></p>
+            <p style="margin-bottom: 0;"><strong>Formato:</strong> JSON</p>
+        </div>
+        
+        <!-- Test API Section -->
+        <div class="card">
+            <h2>🧪 Test API</h2>
+            <p style="margin-bottom: 20px;">Testa rapidamente le chiamate API dal browser:</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+                <button class="btn btn-primary" onclick="testGetStock()">📊 GET Stock Disponibile</button>
+                <button class="btn btn-primary" onclick="testGetMaterie()">📦 GET Materie Prime</button>
+                <button class="btn btn-primary" onclick="testGetCarichi()">📈 GET Carichi</button>
+                <button class="btn btn-primary" onclick="testGetScarichi()">📉 GET Scarichi</button>
+            </div>
+            
+            <div id="testResult" style="margin-top: 20px; display: none;">
+                <h3 style="margin-bottom: 12px;">Risultato:</h3>
+                <pre id="testOutput" class="code-block" style="max-height: 400px; overflow-y: auto;"></pre>
+            </div>
+        </div>
+        
+        <!-- Stock API -->
+        <div class="section">
+            <h2>📊 API Stock</h2>
+            
+            <div class="api-endpoint">
+                <h3><span class="api-method get">GET</span> Ottieni Stock Disponibile</h3>
+                <div class="api-url">GET /tables/stock?page=1&limit=100</div>
+                <p><strong>Descrizione:</strong> Restituisce l'elenco completo dello stock disponibile con quantità e prezzi medi.</p>
+                <p><strong>Parametri Query:</strong></p>
+                <ul>
+                    <li><code>page</code> - Numero pagina (default: 1)</li>
+                    <li><code>limit</code> - Elementi per pagina (default: 100)</li>
+                    <li><code>search</code> - Cerca per codice materiale</li>
+                </ul>
+                <p><strong>Risposta:</strong></p>
+                <pre class="code-block">{
+  "data": [
+    {
+      "id": "uuid",
+      "codice_materiale": "MP001",
+      "quantita_disponibile": 50,
+      "prezzo_medio": 12.50
+    }
+  ],
+  "total": 10,
+  "page": 1,
+  "limit": 100
+}</pre>
+            </div>
+            
+            <div class="api-endpoint">
+                <h3><span class="api-method get">GET</span> Ottieni Stock per Codice</h3>
+                <div class="api-url">GET /tables/stock?search=MP001</div>
+                <p><strong>Descrizione:</strong> Cerca lo stock di un materiale specifico per codice.</p>
+                <p><strong>Uso:</strong> Per verificare disponibilità prima di uno scarico.</p>
+            </div>
+        </div>
+        
+        <!-- Scarichi API -->
+        <div class="section">
+            <h2>📤 API Scarichi</h2>
+            
+            <div class="api-endpoint">
+                <h3><span class="api-method post">POST</span> Crea Nuovo Scarico</h3>
+                <div class="api-url">POST /tables/scarichi_magazzino</div>
+                <p><strong>Descrizione:</strong> Registra un nuovo scarico di materiale da magazzino.</p>
+                <p><strong>Body (JSON):</strong></p>
+                <pre class="code-block">{
+  "numero_ordine": "ORD-2024-001",
+  "codice_materiale": "MP001",
+  "quantita": 10,
+  "note": "Scarico per ordine cliente",
+  "data_scarico": 1705234567890
+}</pre>
+                <p><strong>⚠️ IMPORTANTE:</strong> Prima di creare uno scarico:</p>
+                <ol>
+                    <li>Verifica lo stock disponibile con GET /tables/stock</li>
+                    <li>Controlla che <code>quantita_disponibile >= quantita</code></li>
+                    <li>Dopo lo scarico, aggiorna lo stock con PUT /tables/stock/{id}</li>
+                </ol>
+            </div>
+            
+            <div class="api-endpoint">
+                <h3><span class="api-method get">GET</span> Ottieni Storico Scarichi</h3>
+                <div class="api-url">GET /tables/scarichi_magazzino?page=1&limit=100</div>
+                <p><strong>Descrizione:</strong> Restituisce lo storico di tutti gli scarichi.</p>
+                <p><strong>Filtri disponibili:</strong></p>
+                <ul>
+                    <li><code>search</code> - Cerca per numero ordine o codice materiale</li>
+                    <li><code>sort</code> - Ordina per campo (es. <code>-data_scarico</code> per più recenti)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Carichi API -->
+        <div class="section">
+            <h2>📥 API Carichi</h2>
+            
+            <div class="api-endpoint">
+                <h3><span class="api-method post">POST</span> Crea Nuovo Carico</h3>
+                <div class="api-url">POST /tables/carichi_magazzino</div>
+                <p><strong>Descrizione:</strong> Registra un nuovo carico di materiale in magazzino.</p>
+                <p><strong>Body (JSON):</strong></p>
+                <pre class="code-block">{
+  "codice_materiale": "MP001",
+  "quantita": 100,
+  "prezzo_totale": 1250.00,
+  "iva_percentuale": 22,
+  "prezzo_unitario": 12.50,
+  "data_carico": 1705234567890
+}</pre>
+                <p><strong>⚠️ IMPORTANTE:</strong> Dopo un carico:</p>
+                <ol>
+                    <li>Calcola il prezzo medio ponderato</li>
+                    <li>Aggiorna lo stock con la nuova quantità e prezzo medio</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Materie Prime API -->
+        <div class="section">
+            <h2>📦 API Materie Prime</h2>
+            
+            <div class="api-endpoint">
+                <h3><span class="api-method get">GET</span> Ottieni Materie Prime</h3>
+                <div class="api-url">GET /tables/materie_prime</div>
+                <p><strong>Descrizione:</strong> Restituisce l'elenco di tutte le materie prime catalogate.</p>
+                <p><strong>Risposta:</strong></p>
+                <pre class="code-block">{
+  "data": [
+    {
+      "id": "uuid",
+      "codice": "MP001",
+      "colore": "Rosso",
+      "dimensioni": "100x50x20cm",
+      "foto_url": "https://..."
+    }
+  ]
+}</pre>
+            </div>
+            
+            <div class="api-endpoint">
+                <h3><span class="api-method post">POST</span> Crea Nuova Materia Prima</h3>
+                <div class="api-url">POST /tables/materie_prime</div>
+                <p><strong>Body (JSON):</strong></p>
+                <pre class="code-block">{
+  "codice": "MP001",
+  "colore": "Rosso",
+  "dimensioni": "100x50x20cm",
+  "foto_url": "https://esempio.com/foto.jpg"
+}</pre>
+            </div>
+        </div>
+        
+        <!-- Esempio Integrazione -->
+        <div class="section">
+            <h2>💻 Esempio Integrazione JavaScript</h2>
+            
+            <div class="card">
+                <h3>Scenario: Sistema esterno vuole scaricare materiali</h3>
+                <pre class="code-block">// 1. Verifica stock disponibile
+async function verificaStock(codice) {
+  const response = await fetch(`/tables/stock?search=${codice}`);
+  const data = await response.json();
+  return data.data.find(s => s.codice_materiale === codice);
+}
+
+// 2. Scarica materiale se disponibile
+async function scaricaMateriale(ordine, codice, quantita) {
+  // Verifica stock
+  const stock = await verificaStock(codice);
+  
+  if (!stock || stock.quantita_disponibile < quantita) {
+    throw new Error('Stock insufficiente');
+  }
+  
+  // Crea scarico
+  const scarico = await fetch('/tables/scarichi_magazzino', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      numero_ordine: ordine,
+      codice_materiale: codice,
+      quantita: quantita,
+      data_scarico: Date.now()
+    })
+  });
+  
+  // Aggiorna stock
+  const nuovaQuantita = stock.quantita_disponibile - quantita;
+  await fetch(`/tables/stock/${stock.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      codice_materiale: stock.codice_materiale,
+      quantita_disponibile: nuovaQuantita,
+      prezzo_medio: stock.prezzo_medio
+    })
+  });
+  
+  return await scarico.json();
+}
+
+// 3. Utilizzo
+try {
+  const result = await scaricaMateriale('ORD-2024-001', 'MP001', 10);
+  console.log('Scarico completato:', result);
+} catch (error) {
+  console.error('Errore:', error.message);
+}</pre>
+            </div>
+        </div>
+        
+        <!-- Note Finali -->
+        <div class="card" style="background: #e0f2fe; border-left: 4px solid #0284c7;">
+            <h3 style="margin-bottom: 12px;">📋 Note per l'Integrazione</h3>
+            <ul style="margin: 0; padding-left: 20px;">
+                <li>Tutte le API restituiscono JSON</li>
+                <li>Le date sono in formato timestamp (millisecondi)</li>
+                <li>Gli ID sono UUID generati automaticamente</li>
+                <li><strong>CORS:</strong> Le API sono accessibili dal browser (stessa origine)</li>
+                <li><strong>Autenticazione:</strong> Non richiesta per le API interne (sistema trusted)</li>
+                <li><strong>Gestione Stock:</strong> L'aggiornamento dello stock deve essere gestito dall'applicazione chiamante</li>
+                <li><strong>Calcolo Prezzo Medio:</strong> Deve essere calcolato lato client usando la formula del prezzo medio ponderato</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/api-docs.js"></script>
+</body>
+</html>
