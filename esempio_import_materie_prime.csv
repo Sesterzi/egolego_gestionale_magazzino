@@ -1,4 +1,4 @@
-codice,part_number,codice_colore,colore,foto_url
-MAT-004,PN-12348,RAL3020,Rosso,https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400
-MAT-005,PN-12349,RAL1021,Giallo,https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400
-MAT-006,PN-12350,RAL5015,Blu,https://images.unsplash.com/photo-1590736969955-71cc94901144?w=400
+color_name,color_ref,color_id,lego_size,size_code,picture_url,unique_id
+Light Nougat,#F6D7B3,78,Brick 1*1,3005,https://images.brickset.com/parts/3005.jpg,300578
+White,#FFFFFF,1,Plate 2*2,3022,https://images.brickset.com/parts/3022.jpg,30221
+Black,#1B2A34,26,Tile 1*2,3069,https://images.brickset.com/parts/3069.jpg,306926

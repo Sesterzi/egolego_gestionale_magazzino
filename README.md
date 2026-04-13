@@ -1,6 +1,18 @@
-# 🏭 Gestionale Magazzino
+# 🧱 Gestionale Magazzino LEGO
 
-Sistema completo per la gestione di magazzino con funzionalità di carico, scarico, inventario e integrazione API.
+Sistema completo per la gestione di magazzino LEGO con funzionalità di import materie prime, carico, scarico e inventario.
+
+## 🎯 Versione Attuale: v4.0 (LEGO Edition)
+
+### 🆕 Novità Versione 4.0
+- **Nuovo formato materie prime LEGO** (7 campi)
+- **Validazione colore HEX** (#RRGGBB)
+- **Controllo duplicati su unique_id**
+- **Ricerca avanzata multi-campo** (5 campi)
+- **Visualizzazione colore** con quadrato HEX
+- **Suite test automatica** integrata
+
+---
 
 ## 📋 Funzionalità Implementate
 
@@ -12,27 +24,46 @@ Sistema completo per la gestione di magazzino con funzionalità di carico, scari
 - Gestione sessione con sessionStorage
 - Logout da tutte le pagine
 
-### ✅ Gestione Materie Prime
-- **CRUD completo** per materie prime
-  - Codice materiale univoco
-  - Part Number
-  - Codice colore (es. RAL, supporta anche "0")
-  - Nome colore
-  - Foto (tramite URL)
+### ✅ Gestione Materie Prime LEGO (v4.0)
+
+#### 📦 Struttura Dati (7 Campi Obbligatori)
+```csv
+color_name,color_ref,color_id,lego_size,size_code,picture_url,unique_id
+Light Nougat,#F6D7B3,78,Brick 1*1,3005,https://...,300578
+```
+
+| Campo | Tipo | Esempio | Descrizione |
+|-------|------|---------|-------------|
+| **color_name** | Text | Light Nougat | Nome colore LEGO |
+| **color_ref** | HEX | #F6D7B3 | Codice HEX colore (con #) |
+| **color_id** | Text | 78 | ID colore LEGO |
+| **lego_size** | Text | Brick 1*1 | Descrizione pezzo |
+| **size_code** | Text | 3005 | Codice pezzo LEGO |
+| **picture_url** | URL | https://... | Link immagine |
+| **unique_id** | Text | 300578 | ID univoco (size_code + color_id) |
+
+#### ⚡ Funzionalità
+- **CRUD completo** per materie prime LEGO
 - **Import CSV/Excel massivo** con anteprima
-  - Formato: codice, part_number, codice_colore, colore, foto_url (5 campi obbligatori)
+  - Formato: 7 campi obbligatori (vedi sopra)
   - Supporto file: CSV (UTF-8), Excel (.xlsx, .xls)
-  - Validazione automatica (tutti i campi obbligatori)
-  - Gestione duplicati (salta codici esistenti)
-  - Supporto codice colore "0" come valore valido
+  - Validazione automatica (tutti i campi + formato HEX)
+  - **Protezione duplicati** su `unique_id`
   - File esempio incluso: `esempio_import_materie_prime.csv`
-- **Ricerca** per codice e part number
+- **Ricerca avanzata multi-campo**
+  - color_name (es. "Light Nougat")
+  - color_ref (es. "#F6D7B3")
+  - color_id (es. "78")
+  - lego_size (es. "Brick")
+  - size_code (es. "3005")
+  - unique_id (es. "300578")
 - **Export CSV** di tutte le materie prime
-- **Validazione** codici univoci
+- **Visualizzazione colore** con quadrato HEX colorato
+- **Validazione formato HEX** (#RRGGBB o #RGB)
 
 ### ✅ Carico Magazzino
 - **Registrazione carichi** con:
-  - Selezione materiale dal catalogo
+  - Selezione materiale dal catalogo LEGO
   - Quantità pezzi
   - Prezzo totale (senza IVA)
   - Percentuale IVA (default 0%)
@@ -41,415 +72,449 @@ Sistema completo per la gestione di magazzino con funzionalità di carico, scari
 - **Calcolo prezzo medio ponderato** automatico
 - **Aggiornamento automatico stock**
 - **Storico completo** di tutti i carichi
-- **Filtri** per codice materiale e data
+- **Filtri** per unique_id e data
 - **Export CSV** storico carichi
+
+### ✅ Scarico Magazzino
+- **Scarico singolo** per produzione
+  - Numero ordine
+  - Selezione materiale
+  - Visualizzazione disponibilità
+  - Quantità da scaricare
+  - Validazione vs stock disponibile
+  - Note opzionali
+- **Scarico multiplo** (distinta base)
+  - Un ordine con più materiali
+  - Verifica disponibilità per tutti i materiali
+- **Storico completo** scarichi
+- **Filtri** per ordine, unique_id, data
+- **Export CSV** storico scarichi
 
 ### ✅ Stock Disponibile
 - **Overview completa** con:
-  - Foto materiale
-  - Codice
-  - Colore (nome e codice)
+  - Foto materiale LEGO
+  - Unique ID
+  - Nome colore e HEX
+  - Descrizione size
   - Quantità disponibile
-  - Prezzo medio
+  - Prezzo medio ponderato
   - Valore totale stock
-  - Stato (OK/BASSO/CRITICO/ESAURITO)
-- **Statistiche dashboard**:
+- **Indicatori stato stock**
+  - 🟢 **OK** (≥ 10 pezzi)
+  - 🟡 **BASSO** (5-9 pezzi)
+  - 🔴 **CRITICO** (1-4 pezzi)
+  - ⚫ **ESAURITO** (0 pezzi)
+- **Statistiche aggregate**
   - Totale SKU
   - Totale pezzi
-  - Valore totale magazzino
-  - Conteggio stock bassi
-- **Filtri** per codice e stato
-- **Export CSV** stock
-
-### ✅ Scarico Magazzino
-- **Scarico singolo** con:
-  - Numero ordine
-  - Selezione materiale
-  - Visualizzazione stock disponibile
-  - Quantità da scaricare
-  - Validazione quantità disponibile
-  - Note opzionali
-- **Scarico multiplo (distinta parti)**:
-  - Un ordine con più materiali
-  - Verifica stock per tutti i materiali
-  - Scarico atomico di tutta la distinta
-- **Aggiornamento automatico stock**
-- **Storico completo** scarichi
-- **Filtri** per:
-  - Numero ordine
-  - Codice materiale
-  - Data
-- **Export CSV** storico scarichi
+  - Valore totale inventario
+  - Articoli sotto scorta
+- **Filtri** per unique_id e stato
+- **Export CSV** stock completo
 
 ### ✅ Dashboard
-- **Statistiche in tempo reale**:
-  - Totale materie prime
-  - Totale carichi
-  - Totale scarichi
-  - Valore totale stock
-- **Ultimi 5 carichi**
-- **Ultimi 5 scarichi**
-- **Alert stock basso** (< 10 pezzi)
+- Panoramica generale del magazzino
+- Statistiche in tempo reale
+- Link rapidi alle funzioni principali
 
-### ✅ API RESTful
-- **Documentazione completa** delle API disponibili
-- **Test API integrati** nella UI
-- **Endpoint disponibili**:
-  - GET/POST Materie Prime
-  - GET/POST Carichi
-  - GET/POST Scarichi
-  - GET/PUT Stock
-- **Esempi di integrazione** JavaScript
-- **Ready per integrazione** con sistemi esterni
-
-### ✅ Export Dati
-- **Export CSV** da tutte le sezioni:
-  - Materie prime
-  - Storico carichi
-  - Storico scarichi
-  - Stock disponibile
-- **Formato CSV** con separatori corretti
-- **Encoding UTF-8** con BOM
-- **Nome file** con data automatica
-
-## 🗂️ Struttura Progetto
-
-```
-/
-├── index.html              # Pagina login
-├── dashboard.html          # Dashboard principale
-├── materie-prime.html      # Gestione materie prime
-├── carico.html            # Carico magazzino
-├── scarico.html           # Scarico magazzino
-├── stock.html             # Stock disponibile
-├── api.html               # Documentazione API
-│
-├── css/
-│   └── style.css          # Stili globali
-│
-└── js/
-    ├── auth.js            # Sistema autenticazione
-    ├── api.js             # Helper API e utilities
-    ├── dashboard.js       # Logica dashboard
-    ├── materie-prime.js   # Gestione materie prime
-    ├── carico.js          # Logica carico
-    ├── scarico.js         # Logica scarico
-    ├── stock.js           # Visualizzazione stock
-    └── api-docs.js        # Test API
-```
-
-## 💾 Struttura Database
-
-### Tabella: `materie_prime`
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| id | text | ID univoco (UUID) |
-| codice | text | Codice materiale univoco |
-| part_number | text | Part number prodotto |
-| codice_colore | text | Codice colore (es. RAL9005) |
-| colore | text | Nome colore |
-| dimensioni | text | Dimensioni (opzionale) |
-| foto_url | text | URL foto prodotto |
-
-### Tabella: `carichi_magazzino`
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| id | text | ID univoco (UUID) |
-| codice_materiale | text | Codice SKU materiale |
-| quantita | number | Numero pezzi caricati |
-| prezzo_totale | number | Prezzo totale senza IVA |
-| iva_percentuale | number | Percentuale IVA |
-| prezzo_unitario | number | Prezzo per pezzo |
-| data_carico | datetime | Data e ora carico (timestamp) |
-
-### Tabella: `scarichi_magazzino`
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| id | text | ID univoco (UUID) |
-| numero_ordine | text | Numero ordine cliente |
-| codice_materiale | text | Codice SKU materiale |
-| quantita | number | Numero pezzi scaricati |
-| data_scarico | datetime | Data e ora scarico (timestamp) |
-| note | text | Note aggiuntive |
-
-### Tabella: `stock`
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| id | text | ID univoco (UUID) |
-| codice_materiale | text | Codice SKU materiale |
-| quantita_disponibile | number | Quantità disponibile |
-| prezzo_medio | number | Prezzo medio ponderato |
-
-## 🔌 API Endpoints
-
-### Base URL
-```
-/tables/
-```
-
-### Stock
-- `GET /tables/stock` - Lista stock con paginazione
-- `GET /tables/stock?search={codice}` - Cerca stock per codice
-- `PUT /tables/stock/{id}` - Aggiorna stock
-
-### Materie Prime
-- `GET /tables/materie_prime` - Lista materie prime
-- `GET /tables/materie_prime/{id}` - Dettaglio materia prima
-- `POST /tables/materie_prime` - Crea materia prima
-- `PUT /tables/materie_prime/{id}` - Aggiorna materia prima
-- `DELETE /tables/materie_prime/{id}` - Elimina materia prima
-
-### Carichi
-- `GET /tables/carichi_magazzino` - Lista carichi
-- `POST /tables/carichi_magazzino` - Crea carico
-
-### Scarichi
-- `GET /tables/scarichi_magazzino` - Lista scarichi
-- `POST /tables/scarichi_magazzino` - Crea scarico
-
-### Parametri Query Comuni
-- `page` - Numero pagina (default: 1)
-- `limit` - Elementi per pagina (default: 100)
-- `search` - Ricerca full-text
-- `sort` - Ordinamento (es. `-created_at` per più recenti)
-
-## 📸 Gestione Foto
-
-**Sistema attuale:** URL esterni
-
-Le foto dei materiali vengono gestite tramite URL. L'utente deve:
-1. Caricare la foto su un servizio esterno (Google Drive, Dropbox, hosting web, etc.)
-2. Ottenere l'URL pubblico della foto
-3. Inserire l'URL nel campo "URL Foto"
-
-**Servizi consigliati:**
-- Google Drive (con condivisione pubblica)
-- Dropbox (link pubblici)
-- Imgur
-- Hosting web aziendale
-
-## 📥 Import Massivo CSV/Excel
-
-### Formati Supportati
-Il sistema supporta l'import da:
-- **CSV** (.csv) - Separatore virgola, UTF-8
-- **Excel** (.xlsx, .xls) - Legge il primo foglio
-
-### Formato File
-Il file deve contenere le seguenti colonne (con intestazione):
-```csv
-codice,part_number,codice_colore,foto_url
-```
-
-### Esempio
-Vedi i file inclusi nel progetto:
-- **CSV:** `esempio_import_materie_prime.csv`
-- **Excel:** Vedi `COME_CREARE_EXCEL.md` per istruzioni
-
-```csv
-codice,part_number,codice_colore,foto_url
-MAT-004,PN-12348,RAL3020,https://esempio.com/foto1.jpg
-MAT-005,PN-12349,RAL1021,https://esempio.com/foto2.jpg
-MAT-006,PN-12350,RAL5015,https://esempio.com/foto3.jpg
-```
-
-**Per Excel:** Stessa struttura, prima riga = intestazioni, righe successive = dati
-
-### Regole
-- **Separatore:** virgola (,)
-- **Encoding:** UTF-8
-- **Prima riga:** intestazione colonne
-- **Tutti i campi sono OBBLIGATORI:**
-  - codice → Codice materiale univoco
-  - part_number → Part number prodotto
-  - codice_colore → Codice identificativo colore (es. RAL9005)
-  - foto_url → URL immagine del materiale
-- **Colore e dimensioni:** Da inserire **manualmente dopo l'import** (non nel CSV)
-- **Duplicati:** Le righe con codice già esistente vengono saltate
-
-### Procedura Import
-1. Vai su **Materie Prime**
-2. Clicca su "📤 Importa CSV/Excel"
-3. Seleziona il file CSV o Excel
-4. Clicca su "👁️ Anteprima" per vedere i dati
-5. Verifica l'anteprima (prime 5 righe)
-6. Clicca su "✅ Importa Tutto"
-7. Attendi il completamento (mostra successi/errori)
-
-### Gestione Duplicati
-**⚠️ IMPORTANTE:** Il sistema **NON sovrascrive** materiali esistenti!
-
-- ✅ **Codice nuovo** → Materiale viene importato
-- ⚠️ **Codice già presente** → Riga viene **saltata** (dati esistenti rimangono invariati)
-
-**Esempio:**
-```
-Database: MAT-001, MAT-002
-Import file: MAT-001, MAT-002, MAT-003, MAT-004
-
-Risultato:
-- MAT-001: Saltato (già esiste)
-- MAT-002: Saltato (già esiste)  
-- MAT-003: Importato ✅
-- MAT-004: Importato ✅
-```
-
-**Vantaggio:** Puoi reimportare lo stesso file più volte, vengono aggiunti solo i nuovi materiali.
-
-**Per aggiornare materiali esistenti:** Usa la funzione Modifica (✏️) dalla tabella.
-
-### Tips Import
-- Prepara il file in Excel/Google Sheets (più comodo della gestione CSV)
-- Salva come .xlsx oppure esporta come CSV UTF-8
-- Testa con poche righe prima di importare centinaia di materiali
-- **Assicurati di avere l'URL per ogni foto** prima di preparare il file
-- Carica le foto su Google Drive/Dropbox e ottieni gli URL pubblici
-- **Colore e dimensioni** vanno inseriti manualmente dopo l'import (modifica ogni materiale)
-- Se Excel: il sistema legge solo il primo foglio
-
-## 🎯 Come Utilizzare il Sistema
-
-### 1. Primo Accesso
-1. Accedi con `admin` / `admin123`
-2. Vai su **Materie Prime**
-3. Opzione A: Aggiungi materie prime una alla volta
-4. Opzione B: Usa **Importa CSV** per caricamento massivo
-   - Scarica il file `esempio_import_materie_prime.csv` come template
-   - Compila con i tuoi dati
-   - Importa tutto con un click
-
-### 2. Carico Materiali
-1. Vai su **Carico**
-2. Seleziona il materiale
-3. Inserisci quantità e prezzo
-4. Il sistema calcola automaticamente il prezzo medio ponderato
-5. Lo stock viene aggiornato automaticamente
-
-### 3. Scarico Materiali
-1. Vai su **Scarico**
-2. Inserisci numero ordine
-3. Seleziona materiale e quantità
-4. Il sistema verifica la disponibilità
-5. Lo stock viene aggiornato automaticamente
-
-**Scarico Multiplo:**
-1. Clicca su "Distinta Multipla"
-2. Aggiungi tutti i materiali necessari
-3. Il sistema scarica tutto insieme
-
-### 4. Monitoraggio Stock
-1. Vai su **Stock**
-2. Visualizza quantità disponibili
-3. Filtra per stato (OK, BASSO, CRITICO, ESAURITO)
-4. Esporta CSV per analisi
-
-### 5. Export Dati
-- Ogni sezione ha un pulsante "Esporta CSV"
-- I file vengono scaricati con nome formato: `tipo_YYYY-MM-DD.csv`
-- Formato compatibile con Excel/LibreOffice
-
-## 🔗 Integrazione con Sistemi Esterni
-
-### Scenario 1: Sistema esterno legge lo stock
-```javascript
-async function getStockDisponibile(codice) {
-    const response = await fetch(`/tables/stock?search=${codice}`);
-    const data = await response.json();
-    return data.data.find(s => s.codice_materiale === codice);
-}
-```
-
-### Scenario 2: Sistema esterno scarica materiali
-```javascript
-async function scaricaMateriale(ordine, codice, quantita) {
-    // 1. Verifica stock
-    const stock = await getStockDisponibile(codice);
-    if (stock.quantita_disponibile < quantita) {
-        throw new Error('Stock insufficiente');
-    }
-    
-    // 2. Crea scarico
-    await fetch('/tables/scarichi_magazzino', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            numero_ordine: ordine,
-            codice_materiale: codice,
-            quantita: quantita,
-            data_scarico: Date.now()
-        })
-    });
-    
-    // 3. Aggiorna stock
-    const nuovaQty = stock.quantita_disponibile - quantita;
-    await fetch(`/tables/stock/${stock.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            codice_materiale: stock.codice_materiale,
-            quantita_disponibile: nuovaQty,
-            prezzo_medio: stock.prezzo_medio
-        })
-    });
-}
-```
-
-**Consulta la pagina API nel sistema per esempi completi.**
-
-## ⚠️ Limitazioni Attuali
-
-### Non Implementato (Richiede Backend)
-1. **Export automatico CSV alle 3AM**: Richiede un server con cron job
-2. **Upload foto diretto**: Le foto devono essere caricate su servizi esterni
-3. **Autenticazione API esterna**: Le API con autenticazione richiedono backend
-
-### Workaround Disponibili
-- **Export CSV**: Manuale con un click, disponibile in ogni sezione
-- **Foto**: Tramite URL (Google Drive, Dropbox, etc.)
-- **API**: Documentazione completa per integrazione futura
-
-## 🚀 Prossimi Sviluppi Consigliati
-
-### Alta Priorità
-1. **Backup automatico dati**: Export programmato giornaliero
-2. **Notifiche stock basso**: Alert via email quando stock < soglia
-3. **Report mensili**: Statistiche carichi/scarichi per periodo
-4. **Gestione fornitori**: Associare materie prime a fornitori
-
-### Media Priorità
-5. **Barcode/QR code**: Generazione e scansione codici
-6. **Movimenti magazzino**: Log dettagliato di tutte le operazioni
-7. **Prezzi multipli**: Gestione listini per cliente/fornitore
-8. **Ubicazioni**: Gestione scaffali e posizioni fisiche
-
-### Bassa Priorità
-9. **Inventario fisico**: Funzione per conteggio manuale e riconciliazione
-10. **Multi-magazzino**: Gestione di più depositi
-11. **Gestione utenti**: Ruoli e permessi differenziati
-
-## 🔧 Tecnologie Utilizzate
-
-- **Frontend**: HTML5, CSS3, JavaScript ES6+
-- **Database**: RESTful Table API (JSON-based)
-- **Autenticazione**: SessionStorage
-- **Styling**: CSS custom (no framework)
-- **Export**: JavaScript Blob API
-- **Responsive**: Design mobile-friendly
-
-## 📞 Supporto
-
-Per domande o supporto:
-1. Consulta la **pagina API** nel sistema
-2. Verifica la **Dashboard** per statistiche
-3. Controlla i **filtri** in ogni sezione per ricerche avanzate
-4. Usa l'**Export CSV** per analisi esterne
-
-## 📄 Licenza
-
-Sistema gestionale magazzino - Tutti i diritti riservati.
+### ✅ API Documentation
+- Documentazione completa API REST
+- Esempi di richieste/risposte
+- Test endpoints interattivi
 
 ---
 
-**Versione:** 1.0.0  
-**Data:** 2026-01-14  
-**Stato:** Completamente funzionale ✅
+## 🧪 Test e Qualità
+
+### Suite Test Automatica
+File: `test-gestionale-lego.html`
+
+**12 Test Implementati:**
+1. ✅ Database Connection
+2. ✅ Schema Validation (7 campi)
+3. ✅ HEX Color Validation
+4. ✅ CSV Import
+5. ✅ Duplicate Detection (unique_id)
+6. ✅ Create Record
+7. ✅ Read Record
+8. ✅ Update Record
+9. ✅ Delete Record
+10. ✅ Search color_name
+11. ✅ Search unique_id
+12. ✅ Search lego_size
+
+**Come eseguire:**
+```bash
+# Apri nel browser
+open test-gestionale-lego.html
+
+# Clicca "🚀 ESEGUI TUTTI I TEST"
+# Risultato atteso: 12/12 test passati ✅
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Login
+```
+URL: /index.html
+Username: admin
+Password: admin123
+```
+
+### 2. Import Materie Prime LEGO
+
+**Opzione A: File CSV**
+```csv
+# Crea file: materie_prime_lego.csv
+color_name,color_ref,color_id,lego_size,size_code,picture_url,unique_id
+Light Nougat,#F6D7B3,78,Brick 1*1,3005,https://...,300578
+White,#FFFFFF,1,Plate 2*2,3022,https://...,30221
+```
+
+**Opzione B: Excel**
+1. Crea foglio con colonne: color_name, color_ref, color_id, lego_size, size_code, picture_url, unique_id
+2. Compila i dati
+3. Salva come `.xlsx` o CSV UTF-8
+
+**Import:**
+```
+1. Vai su: Gestione Materie Prime
+2. Clicca: "📥 Importa CSV/Excel"
+3. Carica file
+4. Verifica anteprima (7 colonne)
+5. Clicca: "Importa"
+```
+
+### 3. Carico Materiale
+```
+1. Vai su: Carico Magazzino
+2. Seleziona materiale (ricerca per unique_id)
+3. Inserisci quantità
+4. Inserisci prezzo totale (es. 100.00)
+5. IVA % (default 0%)
+6. Clicca: "Carica in Magazzino"
+→ Stock aggiornato automaticamente
+```
+
+### 4. Verifica Stock
+```
+1. Vai su: Stock Disponibile
+2. Vedi tutte le giacenze
+3. Filtra per unique_id o stato
+4. Export CSV per analisi
+```
+
+---
+
+## 📂 Struttura Progetto
+
+```
+gestionale-magazzino/
+├── index.html                          # Login
+├── dashboard.html                      # Dashboard principale
+├── materie-prime.html                  # Gestione materie prime LEGO
+├── carico.html                         # Carico magazzino
+├── scarico.html                        # Scarico magazzino
+├── stock.html                          # Stock disponibile
+├── api.html                            # Documentazione API
+├── test-gestionale-lego.html          # Suite test automatica (NEW v4.0)
+├── cleanup-materie-prime.html         # Utility pulizia DB
+│
+├── css/
+│   └── style.css                       # Stili globali
+│
+├── js/
+│   ├── auth.js                         # Gestione autenticazione
+│   ├── api.js                          # API REST client
+│   ├── dashboard.js                    # Dashboard logic
+│   ├── materie-prime-lego.js          # Gestione materie prime LEGO (NEW v4.0)
+│   ├── carico.js                       # Carico magazzino logic
+│   ├── stock.js                        # Stock logic
+│   ├── scarico.js                      # Scarico logic
+│   └── api-docs.js                     # API docs interattive
+│
+├── esempio_import_materie_prime.csv    # Template CSV LEGO (NEW v4.0)
+│
+└── docs/
+    ├── README.md                       # Questo file
+    ├── GUIDA_RAPIDA.md                # Guida uso rapido
+    ├── AGGIORNAMENTO_LEGO_COMPLETO.md # Guida v4.0 (NEW)
+    ├── TEST_PRIMA_BACKUP.md           # Checklist test (NEW)
+    ├── INTEGRAZIONE_SHOPIFY_GIT.md    # Guida Shopify (NEW)
+    └── ... (altre guide)
+```
+
+---
+
+## 🔧 Stack Tecnologico
+
+### Frontend
+- **HTML5** - Struttura pagine
+- **CSS3** - Styling e responsive design
+- **JavaScript ES6+** - Logica applicativa
+- **Font Awesome 6.4** - Icone
+
+### Backend
+- **RESTful Table API** - Gestione dati
+  - GET /tables/materie_prime
+  - POST /tables/materie_prime
+  - PUT /tables/materie_prime/{id}
+  - DELETE /tables/materie_prime/{id}
+- **SessionStorage** - Autenticazione client-side
+
+### Libraries
+- **XLSX.js** (0.18.5) - Import/Export Excel
+- Nessuna dipendenza pesante (vanillaJS)
+
+---
+
+## 🎨 Formato Colore HEX
+
+### ✅ Validi
+```
+#FF5733    (6 caratteri)
+#F6D7B3    (6 caratteri)
+#FFF       (3 caratteri, abbreviato)
+#000       (3 caratteri, abbreviato)
+```
+
+### ❌ Invalidi
+```
+FF5733     (manca #)
+#GGGGGG    (caratteri non validi)
+#12345     (lunghezza sbagliata)
+rosso      (testo)
+```
+
+**Regex validazione:**
+```javascript
+/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
+```
+
+---
+
+## 🔒 Sicurezza
+
+### Attuale (Development)
+- ✅ Login statico (admin/admin123)
+- ✅ SessionStorage per auth
+- ✅ Redirect automatico se non autenticato
+
+### Raccomandazioni Produzione
+- 🔐 Implementare autenticazione backend
+- 🔐 HTTPS obbligatorio
+- 🔐 Token JWT invece di sessionStorage
+- 🔐 Rate limiting sulle API
+- 🔐 Protezione CSRF
+- 🔐 Validazione input server-side
+
+---
+
+## 📊 Database Schema
+
+### Tabella: `materie_prime`
+
+| Campo | Tipo | Obbligatorio | Univoco | Esempio |
+|-------|------|--------------|---------|---------|
+| id | UUID | ✅ | ✅ | auto |
+| color_name | text | ✅ | ❌ | Light Nougat |
+| color_ref | text | ✅ | ❌ | #F6D7B3 |
+| color_id | text | ✅ | ❌ | 78 |
+| lego_size | text | ✅ | ❌ | Brick 1*1 |
+| size_code | text | ✅ | ❌ | 3005 |
+| picture_url | text | ✅ | ❌ | https://... |
+| unique_id | text | ✅ | ✅ | 300578 |
+| created_at | timestamp | auto | ❌ | auto |
+| updated_at | timestamp | auto | ❌ | auto |
+
+### Tabella: `carichi_magazzino`
+(Schema invariato)
+
+### Tabella: `stock`
+(Schema invariato - usa unique_id come riferimento)
+
+### Tabella: `scarichi_magazzino`
+(Schema invariato - usa unique_id come riferimento)
+
+---
+
+## 🔄 Breaking Changes v4.0
+
+### ⚠️ NON RETROCOMPATIBILE
+
+**Vecchio formato CSV (v3.x):**
+```csv
+codice,part_number,codice_colore,colore,foto_url
+MAT-001,PN-12345,RAL9005,Nero,https://...
+```
+
+**Nuovo formato CSV (v4.0):**
+```csv
+color_name,color_ref,color_id,lego_size,size_code,picture_url,unique_id
+Light Nougat,#F6D7B3,78,Brick 1*1,3005,https://...,300578
+```
+
+### 📋 Migrazione da v3.x a v4.0
+
+1. **Export dati vecchi**
+   ```
+   Gestione Materie Prime → Esporta CSV
+   ```
+
+2. **Converti formato**
+   ```
+   Vecchio: codice → Nuovo: unique_id
+   Vecchio: colore → Nuovo: color_name
+   Aggiungi: color_ref (HEX), color_id, lego_size, size_code
+   ```
+
+3. **Pulisci database**
+   ```
+   Gestione Materie Prime → Pulisci Database
+   ```
+
+4. **Import nuovo formato**
+   ```
+   Importa CSV/Excel → nuovo file convertito
+   ```
+
+---
+
+## 📦 Deploy e Integrazione
+
+### Opzione 1: Cloudflare Pages (Consigliata)
+```bash
+# 1. Push su GitHub
+git push origin main
+
+# 2. Collega repository su Cloudflare Pages
+# 3. Deploy automatico
+# 4. Custom domain: gestionale.tuosito.com
+```
+
+### Opzione 2: Shopify Integration
+Vedi: `INTEGRAZIONE_SHOPIFY_GIT.md`
+
+### Opzione 3: Netlify
+```bash
+# Deploy manuale
+netlify deploy --prod --dir .
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Import CSV non funziona
+```
+✅ Verifica intestazioni esatte (7 colonne)
+✅ Formato UTF-8
+✅ Color HEX con # (#FF5733)
+✅ Nessuna riga vuota
+✅ unique_id univoci (no duplicati)
+```
+
+### Colori non si visualizzano
+```
+✅ Verifica color_ref formato HEX valido
+✅ Controlla Console browser (F12)
+✅ Ricarica pagina (Ctrl+F5)
+```
+
+### Duplicati nel database
+```
+✅ Usa "Pulisci Database"
+✅ Re-import CSV
+✅ Verifica unique_id univoci nel CSV
+```
+
+### Test falliti
+```
+1. Apri test-gestionale-lego.html
+2. Esegui test singoli
+3. Controlla Console (F12)
+4. Verifica errori specifici
+```
+
+---
+
+## 📚 Documentazione Aggiuntiva
+
+- `GUIDA_RAPIDA.md` - Tutorial passo-passo
+- `AGGIORNAMENTO_LEGO_COMPLETO.md` - Dettagli v4.0
+- `TEST_PRIMA_BACKUP.md` - Checklist test pre-backup
+- `INTEGRAZIONE_SHOPIFY_GIT.md` - Deploy su Shopify
+- `FIX_DUPLICATI_IMPORT.md` - Fix bug duplicati
+- `RICERCA_MULTI_CAMPO.md` - Uso ricerca avanzata
+
+---
+
+## 🤝 Supporto
+
+### GitHub Repository
+```
+https://github.com/Sesterzi/egolego_gestionale_magazzino
+```
+
+### Issues
+Per bug o richieste feature:
+```
+https://github.com/Sesterzi/egolego_gestionale_magazzino/issues
+```
+
+---
+
+## 📝 Changelog
+
+### v4.0.0 (2026-04-12) - LEGO Edition
+- 🎨 **NEW**: Formato materie prime LEGO (7 campi)
+- ✅ **NEW**: Validazione HEX color
+- ✅ **NEW**: Controllo duplicati su unique_id
+- ✅ **NEW**: Ricerca multi-campo (5 campi)
+- ✅ **NEW**: Visualizzazione quadrato colore HEX
+- 🧪 **NEW**: Suite test automatica (12 test)
+- 📚 **NEW**: Documentazione completa v4.0
+- ⚠️ **BREAKING**: Vecchio formato CSV non compatibile
+
+### v3.1.0 (2026-01-28)
+- ✅ Fix import CSV duplicati
+- ✅ Ricerca multi-campo (codice, part_number, codice_colore, colore)
+- ✅ Utility pulizia database
+- 📚 Documentazione deploy Shopify/Cloudflare
+
+### v3.0.0 (2026-01-14)
+- ✅ Sistema completo carico/scarico/stock
+- ✅ Calcolo prezzo medio ponderato
+- ✅ Import CSV/Excel con preview
+- ✅ Export CSV tutti i moduli
+- ✅ Dashboard con statistiche
+
+---
+
+## 📄 Licenza
+
+Progetto privato - Tutti i diritti riservati
+
+© 2026 Sesterzi/egolego
+
+---
+
+## 🎯 Roadmap Futura
+
+### v4.1 (In pianificazione)
+- [ ] Import foto massive da Brickset API
+- [ ] Generazione codice a barre per unique_id
+- [ ] Report avanzati (grafici stock, trend prezzi)
+- [ ] Export PDF documenti carico/scarico
+
+### v5.0 (Long-term)
+- [ ] Multi-utente con permessi
+- [ ] Notifiche email scorte basse
+- [ ] Integrazione fornitori LEGO
+- [ ] App mobile (PWA)
+
+---
+
+**🧱 Buon magazzino LEGO! 🚀**

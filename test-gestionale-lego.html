@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Gestionale LEGO - Materie Prime</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            color: #2c3e50;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+        .test-result {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .test-result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .test-result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .test-result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .btn-test {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px 8px 8px 0;
+        }
+        .btn-test:hover {
+            background: #2980b9;
+        }
+        .test-stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stat-box {
+            flex: 1;
+            padding: 16px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-box.pass {
+            background: #d4edda;
+        }
+        .stat-box.fail {
+            background: #f8d7da;
+        }
+        .stat-box.total {
+            background: #d1ecf1;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .color-preview {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><i class="fas fa-flask"></i> Test Suite - Gestionale LEGO v4.0</h1>
+        
+        <!-- Database Status -->
+        <div class="test-section">
+            <h2>📊 Stato Database</h2>
+            <button class="btn-test" onclick="testDatabaseConnection()">🔌 Test Connessione</button>
+            <button class="btn-test" onclick="testDatabaseSchema()">📋 Verifica Schema</button>
+            <button class="btn-test" onclick="loadCurrentData()">📦 Carica Dati Attuali</button>
+            <div id="dbResults"></div>
+        </div>
+
+        <!-- CSV Import Test -->
+        <div class="test-section">
+            <h2>📥 Test Import CSV LEGO</h2>
+            <p><strong>File di test:</strong> <code>esempio_import_materie_prime.csv</code></p>
+            <p><strong>Formato atteso:</strong> color_name, color_ref, color_id, lego_size, size_code, picture_url, unique_id</p>
+            <input type="file" id="testCsvFile" accept=".csv,.xlsx,.xls">
+            <button class="btn-test" onclick="testCsvImport()">🧪 Test Import</button>
+            <button class="btn-test" onclick="testDuplicateDetection()">🔍 Test Duplicati</button>
+            <button class="btn-test" onclick="testHexValidation()">🎨 Test Validazione HEX</button>
+            <div id="importResults"></div>
+        </div>
+
+        <!-- CRUD Test -->
+        <div class="test-section">
+            <h2>✏️ Test CRUD Operations</h2>
+            <button class="btn-test" onclick="testCreate()">➕ Test Create</button>
+            <button class="btn-test" onclick="testRead()">📖 Test Read</button>
+            <button class="btn-test" onclick="testUpdate()">✏️ Test Update</button>
+            <button class="btn-test" onclick="testDelete()">🗑️ Test Delete</button>
+            <div id="crudResults"></div>
+        </div>
+
+        <!-- Search Test -->
+        <div class="test-section">
+            <h2>🔍 Test Ricerca Multi-Campo</h2>
+            <button class="btn-test" onclick="testSearchColorName()">🎨 Test color_name</button>
+            <button class="btn-test" onclick="testSearchUniqueId()">🔢 Test unique_id</button>
+            <button class="btn-test" onclick="testSearchLegoSize()">📏 Test lego_size</button>
+            <button class="btn-test" onclick="testSearchColorId()">🆔 Test color_id</button>
+            <div id="searchResults"></div>
+        </div>
+
+        <!-- Results Summary -->
+        <div class="test-section">
+            <h2>📈 Riepilogo Test</h2>
+            <div class="test-stats">
+                <div class="stat-box pass">
+                    <div class="stat-number" id="passCount">0</div>
+                    <div>Test Superati</div>
+                </div>
+                <div class="stat-box fail">
+                    <div class="stat-number" id="failCount">0</div>
+                    <div>Test Falliti</div>
+                </div>
+                <div class="stat-box total">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div>Test Totali</div>
+                </div>
+            </div>
+            <button class="btn-test" onclick="runAllTests()" style="width: 100%; margin-top: 20px; background: #27ae60;">
+                🚀 ESEGUI TUTTI I TEST
+            </button>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let testsPassed = 0;
+        let testsFailed = 0;
+        let testsTotal = 0;
+
+        function updateStats() {
+            document.getElementById('passCount').textContent = testsPassed;
+            document.getElementById('failCount').textContent = testsFailed;
+            document.getElementById('totalCount').textContent = testsTotal;
+        }
+
+        function logResult(container, message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            document.getElementById(container).appendChild(div);
+            
+            if (type === 'success') testsPassed++;
+            if (type === 'error') testsFailed++;
+            if (type !== 'info') testsTotal++;
+            updateStats();
+        }
+
+        function clearResults(container) {
+            document.getElementById(container).innerHTML = '';
+        }
+
+        // Test 1: Database Connection
+        async function testDatabaseConnection() {
+            clearResults('dbResults');
+            try {
+                const response = await API.getMateriePrime(1, 1);
+                logResult('dbResults', '✅ Connessione al database OK', 'success');
+                logResult('dbResults', `📊 Totale record: ${response.total}`, 'info');
+            } catch (error) {
+                logResult('dbResults', `❌ Errore connessione: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 2: Database Schema
+        async function testDatabaseSchema() {
+            clearResults('dbResults');
+            try {
+                const response = await API.getMateriePrime(1, 1);
+                if (response.data.length > 0) {
+                    const record = response.data[0];
+                    const expectedFields = ['color_name', 'color_ref', 'color_id', 'lego_size', 'size_code', 'picture_url', 'unique_id'];
+                    const hasAllFields = expectedFields.every(field => field in record);
+                    
+                    if (hasAllFields) {
+                        logResult('dbResults', '✅ Schema database corretto (7 campi LEGO)', 'success');
+                        logResult('dbResults', `📋 Campi: ${expectedFields.join(', ')}`, 'info');
+                    } else {
+                        const missingFields = expectedFields.filter(field => !(field in record));
+                        logResult('dbResults', `❌ Schema incompleto. Campi mancanti: ${missingFields.join(', ')}`, 'error');
+                    }
+                } else {
+                    logResult('dbResults', '⚠️ Nessun record per verificare lo schema. Prova ad importare il CSV di esempio.', 'info');
+                }
+            } catch (error) {
+                logResult('dbResults', `❌ Errore verifica schema: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 3: Load Current Data
+        async function loadCurrentData() {
+            clearResults('dbResults');
+            try {
+                const response = await API.getMateriePrime(1, 100);
+                logResult('dbResults', `📦 Caricati ${response.data.length} record`, 'info');
+                
+                if (response.data.length > 0) {
+                    let html = '<table style="width:100%; margin-top:10px; border-collapse: collapse;">';
+                    html += '<tr style="background:#f8f9fa;"><th>Unique ID</th><th>Color</th><th>Size</th><th>HEX</th></tr>';
+                    response.data.forEach(m => {
+                        html += `<tr style="border-bottom:1px solid #ddd;">
+                            <td>${m.unique_id || '-'}</td>
+                            <td><span class="color-preview" style="background:${m.color_ref || '#ccc'}"></span>${m.color_name || '-'}</td>
+                            <td>${m.lego_size || '-'} (${m.size_code || '-'})</td>
+                            <td>${m.color_ref || '-'}</td>
+                        </tr>`;
+                    });
+                    html += '</table>';
+                    logResult('dbResults', html, 'info');
+                }
+            } catch (error) {
+                logResult('dbResults', `❌ Errore caricamento dati: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 4: HEX Validation
+        function testHexValidation() {
+            clearResults('importResults');
+            
+            const testCases = [
+                { value: '#FF5733', expected: true, label: 'HEX valido (#FF5733)' },
+                { value: '#F6D7B3', expected: true, label: 'HEX valido (#F6D7B3)' },
+                { value: 'FF5733', expected: false, label: 'HEX senza # (FF5733)' },
+                { value: '#FFF', expected: true, label: 'HEX corto (#FFF)' },
+                { value: '#GGGGGG', expected: false, label: 'HEX invalido (#GGGGGG)' },
+                { value: 'rosso', expected: false, label: 'Testo (rosso)' }
+            ];
+
+            const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+            
+            testCases.forEach(test => {
+                const result = hexRegex.test(test.value);
+                const passed = result === test.expected;
+                logResult('importResults', 
+                    `${passed ? '✅' : '❌'} ${test.label}: ${result ? 'valido' : 'invalido'}`,
+                    passed ? 'success' : 'error'
+                );
+            });
+        }
+
+        // Test 5: Create Record
+        async function testCreate() {
+            clearResults('crudResults');
+            try {
+                const testData = {
+                    color_name: 'Test Red',
+                    color_ref: '#FF0000',
+                    color_id: '999',
+                    lego_size: 'Test Brick 2*2',
+                    size_code: 'TEST001',
+                    picture_url: 'https://via.placeholder.com/150/FF0000',
+                    unique_id: 'TEST001999'
+                };
+
+                const created = await API.createMateriaPrima(testData);
+                logResult('crudResults', `✅ Record creato con ID: ${created.id}`, 'success');
+                logResult('crudResults', `📋 Unique ID: ${created.unique_id}`, 'info');
+                
+                // Salva l'ID per i test successivi
+                window.testRecordId = created.id;
+            } catch (error) {
+                logResult('crudResults', `❌ Errore creazione: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 6: Read Record
+        async function testRead() {
+            clearResults('crudResults');
+            if (!window.testRecordId) {
+                logResult('crudResults', '⚠️ Esegui prima il test Create', 'info');
+                return;
+            }
+
+            try {
+                const record = await API.getMateriaPrima(window.testRecordId);
+                logResult('crudResults', `✅ Record letto correttamente`, 'success');
+                logResult('crudResults', `📋 Color: ${record.color_name} (${record.color_ref})`, 'info');
+                logResult('crudResults', `📋 Size: ${record.lego_size} (${record.size_code})`, 'info');
+            } catch (error) {
+                logResult('crudResults', `❌ Errore lettura: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 7: Update Record
+        async function testUpdate() {
+            clearResults('crudResults');
+            if (!window.testRecordId) {
+                logResult('crudResults', '⚠️ Esegui prima il test Create', 'info');
+                return;
+            }
+
+            try {
+                const updated = await API.updateMateriaPrima(window.testRecordId, {
+                    color_name: 'Test Red UPDATED',
+                    color_ref: '#CC0000'
+                });
+                logResult('crudResults', `✅ Record aggiornato`, 'success');
+                logResult('crudResults', `📋 Nuovo nome: ${updated.color_name}`, 'info');
+            } catch (error) {
+                logResult('crudResults', `❌ Errore update: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 8: Delete Record
+        async function testDelete() {
+            clearResults('crudResults');
+            if (!window.testRecordId) {
+                logResult('crudResults', '⚠️ Esegui prima il test Create', 'info');
+                return;
+            }
+
+            try {
+                await API.deleteMateriaPrima(window.testRecordId);
+                logResult('crudResults', `✅ Record eliminato`, 'success');
+                window.testRecordId = null;
+            } catch (error) {
+                logResult('crudResults', `❌ Errore delete: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 9-12: Search Tests
+        async function testSearchColorName() {
+            await testSearch('color_name', 'White', 'searchResults');
+        }
+
+        async function testSearchUniqueId() {
+            await testSearch('unique_id', '300578', 'searchResults');
+        }
+
+        async function testSearchLegoSize() {
+            await testSearch('lego_size', 'Brick', 'searchResults');
+        }
+
+        async function testSearchColorId() {
+            await testSearch('color_id', '78', 'searchResults');
+        }
+
+        async function testSearch(field, term, container) {
+            clearResults(container);
+            try {
+                const response = await API.getMateriePrime(1, 100);
+                const results = response.data.filter(m => {
+                    const value = String(m[field] || '').toLowerCase();
+                    return value.includes(term.toLowerCase());
+                });
+
+                if (results.length > 0) {
+                    logResult(container, `✅ Trovati ${results.length} risultati per "${term}" in campo "${field}"`, 'success');
+                    results.forEach(r => {
+                        logResult(container, `📦 ${r.unique_id}: ${r.color_name} - ${r.lego_size}`, 'info');
+                    });
+                } else {
+                    logResult(container, `⚠️ Nessun risultato per "${term}" in campo "${field}"`, 'info');
+                }
+            } catch (error) {
+                logResult(container, `❌ Errore ricerca: ${error.message}`, 'error');
+            }
+        }
+
+        // Run All Tests
+        async function runAllTests() {
+            testsPassed = 0;
+            testsFailed = 0;
+            testsTotal = 0;
+            updateStats();
+
+            clearResults('dbResults');
+            clearResults('importResults');
+            clearResults('crudResults');
+            clearResults('searchResults');
+
+            // Database tests
+            await testDatabaseConnection();
+            await new Promise(r => setTimeout(r, 500));
+            await testDatabaseSchema();
+            await new Promise(r => setTimeout(r, 500));
+
+            // Validation tests
+            testHexValidation();
+            await new Promise(r => setTimeout(r, 500));
+
+            // CRUD tests
+            await testCreate();
+            await new Promise(r => setTimeout(r, 500));
+            await testRead();
+            await new Promise(r => setTimeout(r, 500));
+            await testUpdate();
+            await new Promise(r => setTimeout(r, 500));
+            await testDelete();
+            await new Promise(r => setTimeout(r, 500));
+
+            // Search tests (se ci sono dati)
+            const data = await API.getMateriePrime(1, 1);
+            if (data.total > 0) {
+                await testSearchColorName();
+                await new Promise(r => setTimeout(r, 500));
+                await testSearchUniqueId();
+                await new Promise(r => setTimeout(r, 500));
+                await testSearchLegoSize();
+                await new Promise(r => setTimeout(r, 500));
+                await testSearchColorId();
+            }
+
+            // Final message
+            setTimeout(() => {
+                alert(`🎉 Test completati!\n\n✅ Superati: ${testsPassed}\n❌ Falliti: ${testsFailed}\n📊 Totali: ${testsTotal}`);
+            }, 1000);
+        }
+
+        // Init
+        window.addEventListener('DOMContentLoaded', () => {
+            logResult('dbResults', '💡 Clicca sui pulsanti per eseguire i test', 'info');
+        });
+    </script>
+</body>
+</html>

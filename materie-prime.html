@@ -64,31 +64,45 @@
                 <input type="hidden" id="materiaId">
                 
                 <div class="form-group">
-                    <label for="codice">Codice Materiale *</label>
-                    <input type="text" id="codice" required placeholder="es. MAT-001">
+                    <label for="uniqueId">Unique ID *</label>
+                    <input type="text" id="uniqueId" required placeholder="es. 300578">
+                    <small style="color: var(--secondary-color);">ID univoco pezzo LEGO</small>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="partNumber">Part Number *</label>
-                        <input type="text" id="partNumber" required placeholder="es. PN-12345">
+                        <label for="colorName">Nome Colore *</label>
+                        <input type="text" id="colorName" required placeholder="es. Light Nougat">
                     </div>
                     
                     <div class="form-group">
-                        <label for="codiceColore">Codice Colore *</label>
-                        <input type="text" id="codiceColore" required placeholder="es. RAL9005">
+                        <label for="colorId">Color ID *</label>
+                        <input type="text" id="colorId" required placeholder="es. 78">
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="colore">Nome Colore *</label>
-                    <input type="text" id="colore" required placeholder="es. Nero">
+                    <label for="colorRef">Color HEX *</label>
+                    <input type="text" id="colorRef" required placeholder="es. #F6D7B3" pattern="#[0-9A-Fa-f]{6}">
+                    <small style="color: var(--secondary-color);">Formato: #RRGGBB</small>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="legoSize">LEGO Size *</label>
+                        <input type="text" id="legoSize" required placeholder="es. Brick 1*1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sizeCode">Size Code *</label>
+                        <input type="text" id="sizeCode" required placeholder="es. 3005">
+                    </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="fotoUrl">URL Foto</label>
-                    <input type="url" id="fotoUrl" placeholder="https://esempio.com/foto.jpg">
-                    <small style="color: var(--secondary-color);">Inserisci l'URL di un'immagine già caricata online</small>
+                    <label for="pictureUrl">Picture URL *</label>
+                    <input type="url" id="pictureUrl" required placeholder="https://www.bricklink.com/PL/3005.jpg">
+                    <small style="color: var(--secondary-color);">URL immagine LEGO/BrickLink</small>
                 </div>
                 
                 <div id="fotoPreview" style="margin-top: 12px; display: none;">
@@ -114,39 +128,40 @@
             <div style="background: #fef3c7; padding: 16px; border-radius: 6px; margin-bottom: 20px;">
                 <h3 style="margin-bottom: 12px; font-size: 16px;">📋 Formato File Richiesto</h3>
                 <p style="margin-bottom: 8px;">Il file CSV o Excel deve contenere le seguenti colonne (con intestazione):</p>
-                <div class="code-block" style="margin-bottom: 12px;">codice,part_number,codice_colore,foto_url,colore</div>
-                <p style="margin-bottom: 8px;"><strong>Tutti i campi sono OBBLIGATORI:</strong></p>
+                <div class="code-block" style="margin-bottom: 12px;">color_name,color_ref,color_id,lego_size,size_code,picture_url,unique_id</div>
+                <p style="margin-bottom: 8px;"><strong>Tutti i 7 campi sono OBBLIGATORI:</strong></p>
                 <ul style="margin: 8px 0 12px 20px; font-size: 14px;">
-                    <li><strong>codice</strong> → Codice materiale univoco</li>
-                    <li><strong>part_number</strong> → Part number prodotto</li>
-                    <li><strong>codice_colore</strong> → Codice identificativo colore (es. RAL9005)</li>
-                    <li><strong>foto_url</strong> → URL immagine del materiale</li>
-                    <li><strong>colore</strong> → Nome colore (es. Nero, Bianco)</li>
+                    <li><strong>color_name</strong> → Nome colore LEGO (es. Light Nougat)</li>
+                    <li><strong>color_ref</strong> → Codice HEX colore (es. #F6D7B3)</li>
+                    <li><strong>color_id</strong> → ID colore LEGO (es. 78)</li>
+                    <li><strong>lego_size</strong> → Descrizione size (es. Brick 1*1)</li>
+                    <li><strong>size_code</strong> → Codice size LEGO (es. 3005)</li>
+                    <li><strong>picture_url</strong> → URL immagine LEGO</li>
+                    <li><strong>unique_id</strong> → ID univoco pezzo (es. 300578)</li>
                 </ul>
                 <p style="margin-bottom: 8px;"><strong>Esempio:</strong></p>
-                <div class="code-block">codice,part_number,codice_colore,foto_url,colore
-MAT-001,PN-12345,RAL9005,https://esempio.com/foto1.jpg,Nero
-MAT-002,PN-12346,RAL9016,https://esempio.com/foto2.jpg,Bianco
-MAT-003,PN-12347,RAL3020,https://esempio.com/foto3.jpg,Rosso</div>
+                <div class="code-block">color_name,color_ref,color_id,lego_size,size_code,picture_url,unique_id
+Light Nougat,#F6D7B3,78,Brick 1*1,3005,https://www.bricklink.com/PL/3005.jpg,300578
+Light Nougat,#F6D7B3,78,Brick 1*2,3004,https://www.bricklink.com/PL/3004.jpg,300478</div>
                 <p style="margin-top: 12px; margin-bottom: 0;"><strong>Note:</strong></p>
                 <ul style="margin: 8px 0 0 20px; font-size: 14px;">
                     <li>Usa virgola (,) come separatore</li>
                     <li>Prima riga: intestazione colonne</li>
-                    <li><strong>Tutti i 5 campi devono essere compilati</strong></li>
-                    <li><strong>"0" è un valore valido</strong> per codice_colore (es. sistema di codifica colori)</li>
+                    <li><strong>Tutti i 7 campi devono essere compilati</strong></li>
+                    <li>Color HEX deve iniziare con # (es. #F6D7B3)</li>
                     <li>Encoding: UTF-8</li>
                 </ul>
             </div>
             
             <div style="background: #e0f2fe; padding: 16px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #0284c7;">
                 <h3 style="margin-bottom: 8px; font-size: 16px;">ℹ️ Come Funziona l'Import</h3>
-                <p style="margin-bottom: 8px; font-size: 14px;">Il sistema importa <strong>solo materiali con codice nuovo</strong>:</p>
+                <p style="margin-bottom: 8px; font-size: 14px;">Il sistema importa <strong>solo materiali con unique_id nuovo</strong>:</p>
                 <ul style="margin: 8px 0 8px 20px; font-size: 14px;">
-                    <li>✅ <strong>Codice NON presente</strong> → Materiale viene importato</li>
-                    <li>⚠️ <strong>Codice già esistente</strong> → Riga viene saltata (dati esistenti non modificati)</li>
+                    <li>✅ <strong>Unique ID NON presente</strong> → Materiale viene importato</li>
+                    <li>⚠️ <strong>Unique ID già esistente</strong> → Riga viene saltata (dati esistenti non modificati)</li>
                 </ul>
                 <p style="margin: 8px 0 0 0; font-size: 13px; color: #0369a1;">
-                    <strong>Esempio:</strong> Se hai MAT-001 nel database e lo reimporti, viene saltato. 
+                    <strong>Esempio:</strong> Se hai 300578 nel database e lo reimporti, viene saltato. 
                     Questo protegge i dati esistenti da sovrascritture accidentali.
                 </p>
             </div>
@@ -178,6 +193,6 @@ MAT-003,PN-12347,RAL3020,https://esempio.com/foto3.jpg,Rosso</div>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="js/materie-prime.js"></script>
+    <script src="js/materie-prime-lego.js"></script>
 </body>
 </html>
