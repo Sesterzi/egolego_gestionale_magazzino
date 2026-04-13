@@ -1,7 +1,7 @@
 // Credenziali statiche
 const CREDENTIALS = {
     username: 'admin',
-    password: 'admin123'
+    password: 'L3g0f1g4t4'
 };
 
 // Verifica se l'utente è autenticato
