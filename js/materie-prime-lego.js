@@ -196,7 +196,7 @@ async function deleteMateria(id, uniqueId) {
         loadMateriePrime();
     } catch (error) {
         console.error('Errore eliminazione:', error);
-        Utils.showMessage('message', 'Errore durante l\\'eliminazione', 'error');
+        Utils.showMessage('message', 'Errore durante l'eliminazione', 'error');
     }
 }
 
