@@ -32,9 +32,9 @@ async function loadStock(searchTerm = '', filterStatus = '') {
         if (filterStatus) {
             data = data.filter(s => {
                 const qty = s.quantita_disponibile;
-                if (filterStatus === 'ok')      return qty >= 10;
-                if (filterStatus === 'basso')   return qty < 10 && qty >= 5;
-                if (filterStatus === 'critico') return qty < 5  && qty > 0;
+                if (filterStatus === 'ok')      return qty >= 100;
+                if (filterStatus === 'basso')   return qty < 100 && qty >= 50;
+                if (filterStatus === 'critico') return qty < 50  && qty > 0;
                 if (filterStatus === 'esaurito')return qty === 0;
                 return true;
             });
@@ -59,7 +59,7 @@ function updateStats(data) {
     const totaleSku   = data.length;
     const totalePezzi = data.reduce((s, i) => s + i.quantita_disponibile, 0);
     const valoreTot   = data.reduce((s, i) => s + i.quantita_disponibile * (i.prezzo_medio || 0), 0);
-    const stockBasso  = data.filter(i => i.quantita_disponibile < 10).length;
+    const stockBasso  = data.filter(i => i.quantita_disponibile < 100).length;
 
     document.getElementById('totaleSku').textContent    = totaleSku;
     document.getElementById('totalePezzi').textContent  = totalePezzi.toLocaleString('it-IT');
@@ -112,8 +112,8 @@ function renderTable(data) {
                     // Badge stato
                     let badgeClass, statoText;
                     if (qty === 0)      { badgeClass = 'badge-danger';  statoText = 'ESAURITO'; }
-                    else if (qty < 5)   { badgeClass = 'badge-danger';  statoText = 'CRITICO'; }
-                    else if (qty < 10)  { badgeClass = 'badge-warning'; statoText = 'BASSO'; }
+                    else if (qty < 50)  { badgeClass = 'badge-danger';  statoText = 'CRITICO'; }
+                    else if (qty < 100) { badgeClass = 'badge-warning'; statoText = 'BASSO'; }
                     else                { badgeClass = 'badge-success'; statoText = 'OK'; }
 
                     return `

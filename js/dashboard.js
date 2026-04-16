@@ -107,7 +107,7 @@ function renderKPI() {
     setText('kpiSpesa', fmt(spesaTot));
 
     // Alert stock
-    const sottoSoglia = allStock.filter(i => i.quantita_disponibile < 10).length;
+    const sottoSoglia = allStock.filter(i => i.quantita_disponibile < 100).length;
     setText('kpiAlert', sottoSoglia);
 }
 
@@ -164,9 +164,9 @@ function renderChartSpesa() {
 
 function renderChartStock() {
     if (!document.getElementById('chartStock')) return;
-    const ok      = allStock.filter(i => i.quantita_disponibile >= 10).length;
-    const basso   = allStock.filter(i => i.quantita_disponibile >= 5 && i.quantita_disponibile < 10).length;
-    const critico = allStock.filter(i => i.quantita_disponibile > 0  && i.quantita_disponibile < 5).length;
+    const ok      = allStock.filter(i => i.quantita_disponibile >= 100).length;
+    const basso   = allStock.filter(i => i.quantita_disponibile >= 50 && i.quantita_disponibile < 100).length;
+    const critico = allStock.filter(i => i.quantita_disponibile > 0  && i.quantita_disponibile < 50).length;
     const esaurito= allStock.filter(i => i.quantita_disponibile === 0).length;
 
     const ctx = document.getElementById('chartStock').getContext('2d');
@@ -174,7 +174,7 @@ function renderChartStock() {
     chartStock = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['OK (≥10)', 'Basso (5–9)', 'Critico (<5)', 'Esaurito'],
+            labels: ['OK (≥100)', 'Basso (50–99)', 'Critico (<50)', 'Esaurito'],
             datasets: [{
                 data: [ok, basso, critico, esaurito],
                 backgroundColor: ['#10b981','#f59e0b','#ef4444','#6b7280'],
@@ -191,8 +191,8 @@ function renderChartStock() {
 
 // ── Alert stock ───────────────────────────────
 function renderAlerts() {
-    const critico = allStock.filter(i => i.quantita_disponibile > 0 && i.quantita_disponibile < 5);
-    const basso   = allStock.filter(i => i.quantita_disponibile >= 5 && i.quantita_disponibile < 10);
+    const critico = allStock.filter(i => i.quantita_disponibile > 0 && i.quantita_disponibile < 50);
+    const basso   = allStock.filter(i => i.quantita_disponibile >= 50 && i.quantita_disponibile < 100);
     const esaurito= allStock.filter(i => i.quantita_disponibile === 0);
 
     const allCritico = [...esaurito, ...critico];
