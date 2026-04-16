@@ -148,22 +148,39 @@ const API = {
 };
 
 
-// ── Tasso di cambio USD/EUR (frankfurter.dev — BCE) ──────
+// ── Tasso di cambio USD/EUR ───────────────────────────────
+// Usa exchangerate-api.com (supporta CORS, gratuito, no key)
+// Per date storiche: frankfurter.dev con fallback al giorno precedente
 async function getExchangeRate(dateISO) {
     const d = dateISO instanceof Date ? dateISO : new Date(dateISO);
-    const dateStr = d.toISOString().split('T')[0];
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    d.setHours(0,0,0,0);
+    const isToday = d.getTime() >= today.getTime();
+
     try {
-        // Prova prima la data specifica
-        let res = await fetch(`https://api.frankfurter.dev/${dateStr}?from=USD&to=EUR`);
-        // Se 404 (weekend/festivo) usa il latest
-        if (!res.ok) {
-            res = await fetch(`https://api.frankfurter.dev/latest?from=USD&to=EUR`);
+        if (isToday) {
+            // Tasso corrente — usa open.er-api.com (CORS ok, gratuito)
+            const res  = await fetch('https://open.er-api.com/v6/latest/USD');
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.rates?.EUR || null;
+        } else {
+            // Tasso storico — frankfurter.dev con fallback -1 giorno se 404
+            const dateStr = d.toISOString().split('T')[0];
+            let res = await fetch(`https://api.frankfurter.dev/${dateStr}?from=USD&to=EUR`);
+            if (!res.ok) {
+                // Prova giorno precedente (weekend/festivo)
+                const prev = new Date(d); prev.setDate(prev.getDate() - 3);
+                const prevStr = prev.toISOString().split('T')[0];
+                res = await fetch(`https://api.frankfurter.dev/${prevStr}?from=USD&to=EUR`);
+            }
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.rates?.EUR || null;
         }
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data.rates?.EUR || null;
     } catch (err) {
-        console.warn('Impossibile recuperare tasso di cambio per', dateStr, err);
+        console.warn('Tasso di cambio non disponibile:', err.message);
         return null;
     }
 }

@@ -118,6 +118,7 @@ function renderCharts() {
 }
 
 function renderChartSpesa() {
+    if (!document.getElementById('chartSpesa')) return;
     // Aggrega spesa per mese
     const byMonth = {};
     allCarichi.forEach(c => {
@@ -162,6 +163,7 @@ function renderChartSpesa() {
 }
 
 function renderChartStock() {
+    if (!document.getElementById('chartStock')) return;
     const ok      = allStock.filter(i => i.quantita_disponibile >= 10).length;
     const basso   = allStock.filter(i => i.quantita_disponibile >= 5 && i.quantita_disponibile < 10).length;
     const critico = allStock.filter(i => i.quantita_disponibile > 0  && i.quantita_disponibile < 5).length;
