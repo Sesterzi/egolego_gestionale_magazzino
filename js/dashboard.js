@@ -16,35 +16,42 @@ let calcLineCount  = 0;
 // ── Init ──────────────────────────────────────
 async function initDashboard() {
     try {
-        // Carica tutto in parallelo + tasso corrente
-        const [matRes, carichiRes, stockRes, rate] = await Promise.all([
+        // Carica dati Supabase e tasso in parallelo, con fallback indipendenti
+        const [matRes, carichiRes, stockRes] = await Promise.all([
             API.getMateriePrime(1, 5000),
             API.getCarichi(1, 5000),
-            API.getStock(1, 5000),
-            getExchangeRate(new Date().toISOString())
+            API.getStock(1, 5000)
         ]);
 
-        allMaterie  = matRes.data    || [];
-        allCarichi  = carichiRes.data || [];
-        allStock    = stockRes.data   || [];
-        currentRate = rate;
+        allMaterie = matRes.data     || [];
+        allCarichi = carichiRes.data || [];
+        allStock   = stockRes.data   || [];
+
+        // Tasso di cambio separato — non blocca il resto se fallisce
+        try {
+            currentRate = await getExchangeRate(new Date().toISOString());
+        } catch (e) {
+            currentRate = null;
+        }
 
         // Banner tasso
         const rateBanner = document.getElementById('rateBanner');
-        if (currentRate) {
-            const today = new Date().toLocaleDateString('it-IT');
-            rateBanner.innerHTML = `💱 Tasso USD/EUR oggi (${today}): <strong>1 USD = ${currentRate.toFixed(4)} EUR</strong> &nbsp;·&nbsp; <em style="opacity:.7;">Fonte: Banca Centrale Europea via frankfurter.app</em>`;
-        } else {
-            rateBanner.innerHTML = '⚠️ Tasso di cambio non disponibile — i valori EUR potrebbero non essere aggiornati.';
-            rateBanner.style.background = '#fef3c7';
-            rateBanner.style.borderColor = '#fbbf24';
-            rateBanner.style.color = '#92400e';
+        if (rateBanner) {
+            if (currentRate) {
+                const today = new Date().toLocaleDateString('it-IT');
+                rateBanner.innerHTML = `💱 Tasso USD/EUR oggi (${today}): <strong>1 USD = ${currentRate.toFixed(4)} EUR</strong> &nbsp;·&nbsp; <em style="opacity:.7;">Fonte: BCE via frankfurter.dev</em>`;
+            } else {
+                rateBanner.innerHTML = '⚠️ Tasso di cambio non disponibile — visualizzazione solo in USD.';
+                rateBanner.style.background = '#fef3c7';
+                rateBanner.style.borderColor = '#fbbf24';
+                rateBanner.style.color = '#92400e';
+            }
         }
 
         renderKPI();
         renderCharts();
         renderAlerts();
-        addCalcLine(); // prima riga calcolatore
+        addCalcLine();
 
     } catch (err) {
         console.error('Errore dashboard:', err);

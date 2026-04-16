@@ -154,7 +154,7 @@ async function getExchangeRate(dateISO) {
     const d = dateISO instanceof Date ? dateISO : new Date(dateISO);
     const dateStr = d.toISOString().split('T')[0];
     try {
-        const res  = await fetch(`https://api.frankfurter.app/${dateStr}?from=USD&to=EUR`);
+        const res  = await fetch(`https://api.frankfurter.dev/${dateStr}?from=USD&to=EUR`);
         const data = await res.json();
         return data.rates?.EUR || null;
     } catch (err) {
