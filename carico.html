@@ -5,6 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carico Magazzino - Gestionale Magazzino</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .tabs { display:flex; gap:0; border-bottom:2px solid var(--border-color); margin-bottom:24px; }
+        .tab-btn { padding:12px 24px; border:none; background:none; font-size:15px; font-weight:500; color:var(--secondary-color); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all 0.2s; }
+        .tab-btn.active { color:var(--primary-color); border-bottom-color:var(--primary-color); }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+        .order-meta { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px; }
+        .order-lines-header { display:grid; grid-template-columns:2.5fr 1fr 1.2fr 1.2fr 60px; gap:8px; padding:8px 12px; background:var(--bg-color); border-radius:6px 6px 0 0; font-weight:600; font-size:13px; color:var(--secondary-color); border:1px solid var(--border-color); border-bottom:none; }
+        .order-line { display:grid; grid-template-columns:2.5fr 1fr 1.2fr 1.2fr 60px; gap:8px; padding:8px; border:1px solid var(--border-color); border-top:none; background:white; align-items:center; }
+        .order-line:last-child { border-radius:0 0 6px 6px; }
+        .order-line input, .order-line select { padding:7px 10px; border:1px solid var(--border-color); border-radius:5px; font-size:13px; width:100%; }
+        .order-line input:focus, .order-line select:focus { outline:none; border-color:var(--primary-color); }
+        .btn-remove-line { background:#fee2e2; color:#991b1b; border:none; border-radius:5px; padding:7px; cursor:pointer; font-size:14px; width:100%; }
+        .btn-remove-line:hover { background:#fca5a5; }
+        .order-summary { background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:16px 20px; margin-top:16px; }
+        .order-summary h3 { font-size:15px; margin-bottom:10px; color:#166534; }
+        .summary-row { display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px; color:#15803d; }
+        .summary-row.total { border-top:1px solid #86efac; padding-top:8px; margin-top:8px; font-weight:700; font-size:16px; color:#14532d; }
+        .import-zone { border:2px dashed var(--border-color); border-radius:10px; padding:40px; text-align:center; cursor:pointer; transition:all 0.2s; background:#fafafa; }
+        .import-zone:hover, .import-zone.dragover { border-color:var(--primary-color); background:#eff6ff; }
+        .import-zone-icon { font-size:48px; margin-bottom:12px; }
+        .import-preview-table { max-height:320px; overflow-y:auto; border-radius:8px; border:1px solid var(--border-color); margin-top:16px; }
+        .import-preview-table table { font-size:13px; }
+        .import-preview-table td, .import-preview-table th { padding:10px 14px; }
+        .row-ok { background:#f0fdf4; }
+        .row-warn { background:#fffbeb; }
+        .row-err { background:#fef2f2; }
+        .tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+        .tag-ok { background:#d1fae5; color:#065f46; }
+        .tag-warn { background:#fef3c7; color:#92400e; }
+        .tag-err { background:#fee2e2; color:#991b1b; }
+        .color-dot { display:inline-block; width:14px; height:14px; border-radius:3px; border:1px solid #ddd; vertical-align:middle; margin-right:6px; }
+        select.materiale-select option { font-size: 13px; }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -19,103 +53,152 @@
             <button id="logoutBtn" class="btn btn-sm btn-danger">Logout</button>
         </div>
     </nav>
-    
+
     <div class="container">
-        <h1>Carico Magazzino</h1>
-        
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
-            <!-- Form Nuovo Carico -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <h1 style="margin:0;">📦 Carico Magazzino</h1>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="manuale">✏️ Ordine manuale</button>
+            <button class="tab-btn" data-tab="import">📊 Importa da Excel/CSV</button>
+            <button class="tab-btn" data-tab="storico">📋 Storico carichi</button>
+        </div>
+
+        <!-- TAB 1: ORDINE MANUALE -->
+        <div id="tab-manuale" class="tab-content active">
             <div class="card">
-                <h2>Nuovo Carico</h2>
-                
-                <div id="message" style="display: none;"></div>
-                
-                <form id="caricoForm">
-                    <div class="form-group">
-                        <label for="codiceMateriale">Codice Materiale *</label>
-                        <select id="codiceMateriale" required>
-                            <option value="">Seleziona...</option>
-                        </select>
+                <h2 style="margin-bottom:20px;">Nuovo ordine di acquisto</h2>
+                <div id="message-manuale" style="display:none;"></div>
+
+                <div class="order-meta">
+                    <div class="form-group" style="margin:0;">
+                        <label>Data ordine / DDT</label>
+                        <input type="date" id="dataOrdine">
                     </div>
-                    
-                    <div id="materialeInfo" style="display: none; padding: 12px; background: #f1f5f9; border-radius: 6px; margin-bottom: 16px;">
-                        <div style="display: flex; gap: 12px; align-items: center;">
-                            <img id="materiale InfoFoto" class="image-preview" alt="Foto materiale" style="display: none;">
-                            <div>
-                                <div><strong>Colore:</strong> <span id="materialeInfoColore"></span></div>
-                                <div><strong>Part Number:</strong> <span id="materialeInfoPartNumber"></span></div>
-                            </div>
-                        </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Invoice Number</label>
+                        <input type="text" id="numeroOrdine" placeholder="es. INV-2024-001">
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="quantita">Quantità (pezzi) *</label>
-                        <input type="number" id="quantita" required min="1" step="1" placeholder="es. 100">
+                    <div class="form-group" style="margin:0;">
+                        <label>Fornitore</label>
+                        <input type="text" id="fornitore" placeholder="es. LEGO Supplier SRL">
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="prezzoTotale">Prezzo Totale (senza IVA) *</label>
-                        <input type="number" id="prezzoTotale" required min="0" step="0.01" placeholder="es. 1500.00">
+                    <div class="form-group" style="margin:0;">
+                        <label>IVA %</label>
+                        <input type="number" id="ivaOrdine" value="22" min="0" max="100" step="0.1">
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="ivaPercentuale">IVA %</label>
-                        <input type="number" id="ivaPercentuale" value="0" min="0" max="100" step="0.1" placeholder="es. 22">
-                        <small style="color: var(--secondary-color);">Default: 0%</small>
-                    </div>
-                    
-                    <div style="background: #f8fafc; padding: 16px; border-radius: 6px; margin-bottom: 16px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span>Prezzo Unitario:</span>
-                            <strong id="prezzoUnitarioCalc">€ 0,00</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span>Importo IVA:</span>
-                            <strong id="importoIvaCalc">€ 0,00</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px;">
-                            <span><strong>Totale con IVA:</strong></span>
-                            <strong style="color: var(--primary-color); font-size: 18px;" id="totaleConIvaCalc">€ 0,00</strong>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-success btn-block">✅ Carica in Magazzino</button>
-                </form>
+                </div>
+
+                <div class="order-lines-header">
+                    <span>Materiale (Unique ID — colore — pezzo)</span>
+                    <span>Quantità (pz)</span>
+                    <span>Prezzo (€ senza IVA)</span>
+                    <span>Prezzo + trasporto (€)</span>
+                    <span></span>
+                </div>
+                <div id="orderLines"></div>
+
+                <button id="addLineBtn" class="btn btn-secondary" style="margin-top:10px; width:100%;">
+                    ➕ Aggiungi riga materiale
+                </button>
+
+                <div class="order-summary" id="orderSummary">
+                    <h3>📊 Riepilogo ordine</h3>
+                    <div class="summary-row"><span>Righe materiali:</span><span id="summaryRighe">0</span></div>
+                    <div class="summary-row"><span>Totale pezzi:</span><span id="summaryPezzi">0</span></div>
+                    <div class="summary-row"><span>Imponibile (senza trasporto):</span><span id="summaryImponibile">€ 0,00</span></div>
+                    <div class="summary-row"><span>Imponibile + trasporto:</span><span id="summaryTransp">€ 0,00</span></div>
+                    <div class="summary-row"><span>IVA (su imponibile):</span><span id="summaryIva">€ 0,00</span></div>
+                    <div class="summary-row total"><span>Totale (senza trasporto + IVA):</span><span id="summaryTotale">€ 0,00</span></div>
+                    <div class="summary-row total" style="color:#1e40af;border-color:#93c5fd;"><span>Totale (con trasporto + IVA):</span><span id="summaryTotaleTransp">€ 0,00</span></div>
+                </div>
+
+                <button id="submitOrdineBtn" class="btn btn-success btn-block" style="margin-top:20px;">
+                    ✅ Conferma carico in magazzino
+                </button>
             </div>
-            
-            <!-- Storico Carichi -->
-            <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h2>Storico Carichi</h2>
-                    <button id="exportBtn" class="btn btn-secondary">📥 Esporta CSV</button>
+        </div>
+
+        <!-- TAB 2: IMPORT EXCEL/CSV -->
+        <div id="tab-import" class="tab-content">
+            <div class="card">
+                <h2>Importa ordine da Excel / CSV</h2>
+                <p style="color:var(--secondary-color); margin-bottom:4px;">
+                    Colonne richieste: <code>unique_id</code> &nbsp;·&nbsp; <code>quantita</code> &nbsp;·&nbsp; <code>prezzo</code>
+                </p>
+                <p style="color:var(--secondary-color); margin-bottom:20px; font-size:13px;">
+                    Colonne opzionali: <code>data</code> &nbsp;·&nbsp; <code>invoice_number</code> &nbsp;·&nbsp; <code>prezzo_incl_transport</code> &nbsp;·&nbsp; <code>iva_percentuale</code>
+                </p>
+
+                <div class="import-zone" id="importZone">
+                    <div class="import-zone-icon">📊</div>
+                    <p><strong>Trascina qui il file Excel (.xlsx, .xls) o CSV</strong></p>
+                    <p style="margin-bottom:12px;">oppure</p>
+                    <button class="btn btn-primary" onclick="document.getElementById('importFileInput').click()">
+                        Seleziona file
+                    </button>
+                    <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
                 </div>
-                
-                <div class="filters">
-                    <div class="filters-row">
-                        <div class="form-group">
-                            <label for="filterCodice">Filtra per Codice</label>
-                            <select id="filterCodice">
-                                <option value="">Tutti</option>
-                            </select>
+
+                <div id="importMeta" style="display:none; margin-top:20px;">
+                    <div class="order-meta">
+                        <div class="form-group" style="margin:0;">
+                            <label>Invoice Number (se non nel file)</label>
+                            <input type="text" id="importNumeroOrdine" placeholder="es. INV-2024-001">
                         </div>
-                        <div class="form-group">
-                            <label for="filterData">Filtra per Data</label>
-                            <input type="date" id="filterData">
+                        <div class="form-group" style="margin:0;">
+                            <label>Fornitore</label>
+                            <input type="text" id="importFornitore">
                         </div>
-                        <div class="form-group">
-                            <button id="filterBtn" class="btn btn-primary">🔍 Filtra</button>
-                            <button id="resetBtn" class="btn btn-secondary">🔄 Reset</button>
+                        <div class="form-group" style="margin:0;">
+                            <label>IVA % (globale se non nel file)</label>
+                            <input type="number" id="importIva" value="22" min="0" max="100" step="0.1">
                         </div>
                     </div>
                 </div>
-                
-                <div id="carichiTable" class="table-container">
-                    <p class="empty-state">Caricamento...</p>
+
+                <div id="importPreview"></div>
+
+                <div id="importActions" style="display:none; margin-top:16px;">
+                    <div id="message-import" style="display:none;"></div>
+                    <button id="importConfirmBtn" class="btn btn-success btn-block">
+                        ✅ Conferma e carica tutto in magazzino
+                    </button>
                 </div>
             </div>
         </div>
+
+        <!-- TAB 3: STORICO -->
+        <div id="tab-storico" class="tab-content">
+            <div class="filters card" style="margin-bottom:16px;">
+                <div class="filters-row">
+                    <div class="form-group" style="margin:0;">
+                        <label>Filtra per Unique ID</label>
+                        <select id="filterCodice"><option value="">Tutti</option></select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Data</label>
+                        <input type="date" id="filterData">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Invoice Number</label>
+                        <input type="text" id="filterOrdine" placeholder="es. INV-2024-001">
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:flex-end;">
+                        <button id="filterBtn" class="btn btn-primary">🔍 Filtra</button>
+                        <button id="resetBtn" class="btn btn-secondary">🔄 Reset</button>
+                        <button id="exportBtn" class="btn btn-secondary">📥 Esporta CSV</button>
+                    </div>
+                </div>
+            </div>
+            <div id="carichiTable" class="table-container">
+                <p class="empty-state">Caricamento...</p>
+            </div>
+        </div>
     </div>
-    
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/carico.js"></script>
