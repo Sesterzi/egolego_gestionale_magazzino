@@ -148,13 +148,18 @@ const API = {
 };
 
 
-// ── Tasso di cambio storico USD/EUR (frankfurter.app) ─────
+// ── Tasso di cambio USD/EUR (frankfurter.dev — BCE) ──────
 async function getExchangeRate(dateISO) {
-    // dateISO: stringa ISO o oggetto Date → formatta come YYYY-MM-DD
     const d = dateISO instanceof Date ? dateISO : new Date(dateISO);
     const dateStr = d.toISOString().split('T')[0];
     try {
-        const res  = await fetch(`https://api.frankfurter.dev/${dateStr}?from=USD&to=EUR`);
+        // Prova prima la data specifica
+        let res = await fetch(`https://api.frankfurter.dev/${dateStr}?from=USD&to=EUR`);
+        // Se 404 (weekend/festivo) usa il latest
+        if (!res.ok) {
+            res = await fetch(`https://api.frankfurter.dev/latest?from=USD&to=EUR`);
+        }
+        if (!res.ok) return null;
         const data = await res.json();
         return data.rates?.EUR || null;
     } catch (err) {

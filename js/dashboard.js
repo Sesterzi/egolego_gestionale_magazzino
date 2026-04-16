@@ -77,33 +77,38 @@ function fmt(usdAmount) {
 }
 
 // ── KPI ───────────────────────────────────────
+function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+
 function renderKPI() {
     // SKU
-    document.getElementById('kpiSku').textContent = allMaterie.length;
+    setText('kpiSku', allMaterie.length);
 
     // Valore magazzino (weighted avg)
     const valoreUSD = allStock.reduce((s, i) => s + i.quantita_disponibile * (i.prezzo_medio || 0), 0);
-    document.getElementById('kpiValore').textContent = fmt(valoreUSD);
-    document.getElementById('kpiValoreSub').textContent = currentCurrency === 'EUR' && currentRate
+    setText('kpiValore', fmt(valoreUSD));
+    setText('kpiValoreSub', currentCurrency === 'EUR' && currentRate
         ? `≈ al cambio odierno (${currentRate.toFixed(4)})`
-        : 'weighted average';
+        : 'weighted average');
 
     // Pezzi totali
     const pezziTot = allStock.reduce((s, i) => s + i.quantita_disponibile, 0);
-    document.getElementById('kpiPezzi').textContent = pezziTot.toLocaleString('it-IT');
+    setText('kpiPezzi', pezziTot.toLocaleString('it-IT'));
 
     // Ordini unici
     const ordiniUnici = new Set(allCarichi.map(c => c.invoice_number || c.numero_ordine).filter(Boolean));
-    document.getElementById('kpiOrdini').textContent = ordiniUnici.size;
-    document.getElementById('kpiOrdiniSub').textContent = `${allCarichi.length} righe totali`;
+    setText('kpiOrdini', ordiniUnici.size);
+    setText('kpiOrdiniSub', `${allCarichi.length} righe totali`);
 
     // Spesa totale
     const spesaTot = allCarichi.reduce((s, c) => s + (c.prezzo_totale || 0), 0);
-    document.getElementById('kpiSpesa').textContent = fmt(spesaTot);
+    setText('kpiSpesa', fmt(spesaTot));
 
     // Alert stock
     const sottoSoglia = allStock.filter(i => i.quantita_disponibile < 10).length;
-    document.getElementById('kpiAlert').textContent = sottoSoglia;
+    setText('kpiAlert', sottoSoglia);
 }
 
 // ── Grafici ───────────────────────────────────
