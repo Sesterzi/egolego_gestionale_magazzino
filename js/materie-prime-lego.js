@@ -386,7 +386,7 @@ function processImportData(jsonData) {
         
     } catch (error) {
         console.error('Errore processamento dati:', error);
-        alert('Errore nell\\'elaborazione dei dati: ' + error.message);
+        alert("Errore nell'elaborazione dei dati: " + error.message);
     }
 }
 
