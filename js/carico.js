@@ -275,37 +275,56 @@ async function handleImportFile(file) {
     } catch (err) { return alert('Errore lettura file: ' + err.message); }
     if (!rows.length) return alert('File vuoto o formato non riconosciuto.');
 
-    importRows = rows.map((row, idx) => {
-        // Normalizza colonne con COL_MAP
+    // Filtra righe completamente vuote (nessun qty né prezzo) prima di processarle
+    const rowsFiltrati = rows.filter(row => {
+        const r = {};
+        Object.keys(row).forEach(k => {
+            const mapped = COL_MAP[k.toLowerCase().trim()];
+            if (mapped) r[mapped] = row[k];
+        });
+        const qty   = r.quantita != null && r.quantita !== '' ? parseFloat(r.quantita) : null;
+        const price = r.prezzo   != null && r.prezzo   !== '' ? parseFloat(r.prezzo)   : null;
+        // Tieni la riga solo se ha almeno qty > 0 O prezzo > 0
+        return (qty != null && qty > 0) || (price != null && price > 0);
+    });
+
+    importRows = rowsFiltrati.map((row) => {
+        // Normalizza colonne con COL_MAP (case-insensitive, trim spazi)
         const r = {};
         Object.keys(row).forEach(k => {
             const mapped = COL_MAP[k.toLowerCase().trim()];
             if (mapped) r[mapped] = row[k];
         });
 
-        const uid          = String(r.unique_id   || '').trim();
-        const qty          = parseInt(r.quantita  || 0);
-        const prezzo       = parseFloat(r.prezzo  || 0);
-        const transp       = r.prezzo_incl_transport !== undefined && r.prezzo_incl_transport !== ''
-                                ? parseFloat(r.prezzo_incl_transport) : prezzo;
-        const unitPrice    = r.unit_price !== undefined && r.unit_price !== ''
-                                ? parseFloat(r.unit_price) : (qty > 0 ? prezzo / qty : 0);
-        const vatApplied   = r.vat_applied !== undefined && r.vat_applied !== ''
+        // unique_id può essere numerico in Excel (es. 300578) → forza stringa
+        const uid          = r.unique_id != null ? String(r.unique_id).trim() : '';
+        const qty          = r.quantita  != null && r.quantita !== '' ? parseInt(r.quantita) : null;
+        const prezzo       = r.prezzo    != null && r.prezzo   !== '' ? parseFloat(r.prezzo) : null;
+        const transpRaw    = r.prezzo_incl_transport;
+        const transp       = transpRaw != null && transpRaw !== '' ? parseFloat(transpRaw) : prezzo;
+        // Unit price: usa quello del file se presente, altrimenti calcola
+        const upRaw        = r.unit_price;
+        const unitPrice    = upRaw != null && upRaw !== '' && parseFloat(upRaw) > 0
+                                ? parseFloat(upRaw)
+                                : (qty > 0 && prezzo != null ? prezzo / qty : 0);
+        const vatApplied   = r.vat_applied != null && r.vat_applied !== ''
                                 ? parseFloat(r.vat_applied) : undefined;
-        const invoiceNo    = String(r.invoice_number || '').trim();
-        const dateOrdered  = r.date_ordered  ? parseDataFlex(r.date_ordered)  : null;
-        const dateDelivered= r.date_delivered ? parseDataFlex(r.date_delivered) : null;
-        const materia      = findMateria(uid);
+        const invoiceNo    = r.invoice_number != null ? String(r.invoice_number).trim() : '';
+        // Date: SheetJS con cellDates:true restituisce oggetti Date
+        const dateOrdered   = r.date_ordered   ? parseDataFlex(r.date_ordered)   : null;
+        const dateDelivered = r.date_delivered  ? parseDataFlex(r.date_delivered)  : null;
+        const materia       = findMateria(uid);
 
         let stato = 'ok', statoMsg = 'OK';
-        if (!invoiceNo)       { stato = 'err';  statoMsg = 'Order# mancante'; }
-        else if (!uid)        { stato = 'err';  statoMsg = 'Unique ID mancante'; }
-        else if (!materia)    { stato = 'warn'; statoMsg = 'Non trovato nel DB'; }
-        else if (!(qty > 0))  { stato = 'err';  statoMsg = 'Quantità non valida'; }
-        else if (!dateOrdered){ stato = 'err';  statoMsg = 'Date ordered mancante'; }
-        else if (isNaN(prezzo) || prezzo < 0) { stato = 'err'; statoMsg = 'Prezzo non valido'; }
+        if (!invoiceNo)              { stato = 'err';  statoMsg = 'Order# mancante'; }
+        else if (!uid)               { stato = 'err';  statoMsg = 'Unique ID mancante'; }
+        else if (!materia)           { stato = 'warn'; statoMsg = 'Non trovato nel DB'; }
+        else if (!dateOrdered)       { stato = 'err';  statoMsg = 'Date ordered mancante'; }
+        else if (!(qty > 0))         { stato = 'err';  statoMsg = 'Quantità non valida'; }
+        else if (prezzo == null || isNaN(prezzo) || prezzo < 0) { stato = 'err'; statoMsg = 'Prezzo non valido'; }
 
-        return { uid, qty, prezzo, transp, unitPrice, vatApplied, invoiceNo,
+        return { uid, qty: qty || 0, prezzo: prezzo || 0, transp: transp || 0,
+                 unitPrice, vatApplied, invoiceNo,
                  dateOrdered, dateDelivered, materia, stato, statoMsg };
     });
 
@@ -313,8 +332,11 @@ async function handleImportFile(file) {
 }
 
 function parseDataFlex(raw) {
-    if (!raw && raw !== 0) return null;
+    if (raw == null) return null;
+    // SheetJS con cellDates:true → oggetto Date JS
+    if (raw instanceof Date) return isNaN(raw) ? null : raw.toISOString();
     if (typeof raw === 'number') {
+        // Excel serial date
         const d = new Date((raw - 25569) * 86400 * 1000);
         return isNaN(d) ? null : d.toISOString();
     }
@@ -345,9 +367,12 @@ function parseExcel(file) {
         const reader = new FileReader();
         reader.onload = e => {
             try {
-                const wb   = XLSX.read(e.target.result, { type: 'array', cellDates: false });
+                // cellDates:true → date come oggetti JS Date (non serial number)
+                // raw:true → numeri come numeri (non stringhe formattate)
+                const wb   = XLSX.read(e.target.result, { type: 'array', cellDates: true, raw: true });
                 const ws   = wb.Sheets[wb.SheetNames[0]];
-                const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+                // defval:null → celle vuote restano null (non stringa vuota)
+                const data = XLSX.utils.sheet_to_json(ws, { defval: null, raw: true });
                 resolve(data.map(row => {
                     const n = {};
                     Object.keys(row).forEach(k => { n[k.trim()] = row[k]; });
@@ -389,10 +414,10 @@ function renderImportPreview() {
 
     document.getElementById('importPreview').innerHTML = `
         <div style="display:flex;gap:12px;margin-top:16px;margin-bottom:8px;font-size:14px;flex-wrap:wrap;">
-            <span><strong>${importRows.length}</strong> righe</span>
+            <span><strong>${importRows.length}</strong> righe totali</span>
             <span style="color:#065f46;">✅ ${okCnt} ok</span>
-            ${warnCnt ? `<span style="color:#92400e;">⚠️ ${warnCnt} attenzione</span>` : ''}
-            ${errCnt  ? `<span style="color:#991b1b;">❌ ${errCnt} errori (saltati)</span>` : ''}
+            ${warnCnt    ? `<span style="color:#92400e;">⚠️ ${warnCnt} attenzione</span>` : ''}
+            ${errCnt ? `<span style="color:#991b1b;">❌ ${errCnt} errori (saltati)</span>` : ''}
         </div>
         <div class="import-preview-table">
             <table><thead><tr>
