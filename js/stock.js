@@ -1,162 +1,176 @@
-let stockData = [];
+let stockData    = [];
 let materiePrime = [];
 
-// Carica materie prime per avere le informazioni complete
+// ── Carica dati ───────────────────────────────
 async function loadMateriePrime() {
     try {
-        const result = await API.getMateriePrime();
+        const result = await API.getMateriePrime(1, 5000);
         materiePrime = result.data || [];
-    } catch (error) {
-        console.error('Errore caricamento materie prime:', error);
+    } catch (err) {
+        console.error('Errore caricamento materie prime:', err);
     }
 }
 
-// Carica stock
 async function loadStock(searchTerm = '', filterStatus = '') {
     try {
-        const result = await API.getStock(1, 1000);
-        stockData = result.data || [];
-        
-        // Filtra per codice
+        const result = await API.getStock(1, 5000);
+        let data = result.data || [];
+
+        // Ricerca su unique_id, color_name, lego_size, size_code
         if (searchTerm) {
-            stockData = stockData.filter(s => 
-                s.codice_materiale.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-        
-        // Filtra per stato
-        if (filterStatus) {
-            stockData = stockData.filter(s => {
-                const qty = s.quantita_disponibile;
-                switch (filterStatus) {
-                    case 'ok': return qty >= 10;
-                    case 'basso': return qty < 10 && qty >= 5;
-                    case 'critico': return qty < 5 && qty > 0;
-                    case 'esaurito': return qty === 0;
-                    default: return true;
-                }
+            const s = searchTerm.toLowerCase();
+            data = data.filter(stock => {
+                const m = findMateria(stock.codice_materiale);
+                return stock.codice_materiale.toLowerCase().includes(s)
+                    || (m?.color_name  || '').toLowerCase().includes(s)
+                    || (m?.lego_size   || '').toLowerCase().includes(s)
+                    || (m?.size_code   || '').toLowerCase().includes(s);
             });
         }
-        
-        updateStats(stockData);
-        renderTable(stockData);
-    } catch (error) {
-        console.error('Errore caricamento stock:', error);
-        document.getElementById('stockTable').innerHTML = 
+
+        // Filtro stato
+        if (filterStatus) {
+            data = data.filter(s => {
+                const qty = s.quantita_disponibile;
+                if (filterStatus === 'ok')      return qty >= 10;
+                if (filterStatus === 'basso')   return qty < 10 && qty >= 5;
+                if (filterStatus === 'critico') return qty < 5  && qty > 0;
+                if (filterStatus === 'esaurito')return qty === 0;
+                return true;
+            });
+        }
+
+        stockData = data;
+        updateStats(data);
+        renderTable(data);
+    } catch (err) {
+        console.error('Errore caricamento stock:', err);
+        document.getElementById('stockTable').innerHTML =
             '<p class="empty-state">Errore nel caricamento dei dati</p>';
     }
 }
 
-function updateStats(data) {
-    const totaleSku = data.length;
-    const totalePezzi = data.reduce((sum, item) => sum + item.quantita_disponibile, 0);
-    const valoreTotale = data.reduce((sum, item) => sum + (item.quantita_disponibile * item.prezzo_medio), 0);
-    const stockBasso = data.filter(item => item.quantita_disponibile < 10).length;
-    
-    document.getElementById('totaleSku').textContent = totaleSku;
-    document.getElementById('totalePezzi').textContent = totalePezzi;
-    document.getElementById('valoreTotale').textContent = Utils.formatCurrency(valoreTotale);
-    document.getElementById('stockBasso').textContent = stockBasso;
+function findMateria(uid) {
+    return materiePrime.find(m => m.unique_id === uid) || null;
 }
 
+// ── Stats ─────────────────────────────────────
+function updateStats(data) {
+    const totaleSku   = data.length;
+    const totalePezzi = data.reduce((s, i) => s + i.quantita_disponibile, 0);
+    const valoreTot   = data.reduce((s, i) => s + i.quantita_disponibile * (i.prezzo_medio || 0), 0);
+    const stockBasso  = data.filter(i => i.quantita_disponibile < 10).length;
+
+    document.getElementById('totaleSku').textContent    = totaleSku;
+    document.getElementById('totalePezzi').textContent  = totalePezzi.toLocaleString('it-IT');
+    document.getElementById('valoreTotale').textContent = formatUSD(valoreTot);
+    document.getElementById('stockBasso').textContent   = stockBasso;
+}
+
+// ── Tabella ───────────────────────────────────
 function renderTable(data) {
     const container = document.getElementById('stockTable');
-    
     if (!data || data.length === 0) {
         container.innerHTML = '<p class="empty-state">Nessun stock disponibile</p>';
         return;
     }
-    
-    const html = `
+
+    container.innerHTML = `
         <table>
             <thead>
                 <tr>
                     <th>Foto</th>
-                    <th>Codice</th>
+                    <th>Unique ID</th>
                     <th>Colore</th>
+                    <th>LEGO Size</th>
                     <th>Quantità</th>
-                    <th>Prezzo Medio</th>
-                    <th>Valore Stock</th>
+                    <th>Prezzo medio (USD)</th>
+                    <th>Valore stock (USD)</th>
                     <th>Stato</th>
                 </tr>
             </thead>
             <tbody>
                 ${data.map(stock => {
-                    const materia = materiePrime.find(m => m.codice === stock.codice_materiale);
+                    const m   = findMateria(stock.codice_materiale);
                     const qty = stock.quantita_disponibile;
-                    const valore = qty * stock.prezzo_medio;
-                    
+                    const pm  = stock.prezzo_medio || 0;
+                    const val = qty * pm;
+
+                    // Immagine dal catalogo materie prime
+                    const imgUrl = m?.picture_url || '';
+                    const imgHtml = imgUrl
+                        ? `<img src="${imgUrl}" class="image-preview" alt="${stock.codice_materiale}"
+                               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                           <div class="image-preview" style="display:none;background:#f1f5f9;align-items:center;justify-content:center;color:#94a3b8;">📦</div>`
+                        : `<div class="image-preview" style="background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;">📦</div>`;
+
+                    // Pallino colore HEX
+                    const dot = m?.color_ref
+                        ? `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${m.color_ref};border:1px solid #ddd;vertical-align:middle;margin-right:5px;"></span>`
+                        : '';
+
+                    // Badge stato
                     let badgeClass, statoText;
-                    if (qty === 0) {
-                        badgeClass = 'badge-danger';
-                        statoText = 'ESAURITO';
-                    } else if (qty < 5) {
-                        badgeClass = 'badge-danger';
-                        statoText = 'CRITICO';
-                    } else if (qty < 10) {
-                        badgeClass = 'badge-warning';
-                        statoText = 'BASSO';
-                    } else {
-                        badgeClass = 'badge-success';
-                        statoText = 'OK';
-                    }
-                    
+                    if (qty === 0)      { badgeClass = 'badge-danger';  statoText = 'ESAURITO'; }
+                    else if (qty < 5)   { badgeClass = 'badge-danger';  statoText = 'CRITICO'; }
+                    else if (qty < 10)  { badgeClass = 'badge-warning'; statoText = 'BASSO'; }
+                    else                { badgeClass = 'badge-success'; statoText = 'OK'; }
+
                     return `
                         <tr>
-                            <td>
-                                ${materia && materia.foto_url ? 
-                                    `<img src="${materia.foto_url}" class="image-preview" alt="${stock.codice_materiale}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENO IMG%3C/text%3E%3C/svg%3E'">` 
-                                    : '<div class="image-preview" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8;">📦</div>'}
-                            </td>
+                            <td>${imgHtml}</td>
                             <td><strong>${stock.codice_materiale}</strong></td>
-                            <td>${materia ? materia.colore : '-'}</td>
-                            <td><strong style="font-size: 18px;">${qty}</strong> pz</td>
-                            <td>${Utils.formatCurrency(stock.prezzo_medio)}</td>
-                            <td><strong>${Utils.formatCurrency(valore)}</strong></td>
+                            <td>
+                                ${dot}${m?.color_name || '—'}
+                                ${m?.color_id ? `<br><small style="color:#94a3b8;">ID: ${m.color_id}</small>` : ''}
+                            </td>
+                            <td>${m?.lego_size || '—'}<br><small style="color:#94a3b8;">${m?.size_code || ''}</small></td>
+                            <td><strong style="font-size:18px;">${qty.toLocaleString('it-IT')}</strong> pz</td>
+                            <td>${formatUSD(pm)}</td>
+                            <td><strong>${formatUSD(val)}</strong></td>
                             <td><span class="badge ${badgeClass}">${statoText}</span></td>
-                        </tr>
-                    `;
+                        </tr>`;
                 }).join('')}
             </tbody>
-        </table>
-    `;
-    
-    container.innerHTML = html;
+        </table>`;
 }
 
-// Event listeners
+// ── Formato USD ───────────────────────────────
+function formatUSD(amount) {
+    if (amount == null) return '$ 0.00';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+}
+
+// ── Event listeners ───────────────────────────
 document.getElementById('filterBtn').addEventListener('click', () => {
-    const searchTerm = document.getElementById('searchCodice').value;
-    const filterStatus = document.getElementById('filterStatus').value;
-    loadStock(searchTerm, filterStatus);
+    loadStock(
+        document.getElementById('searchCodice').value,
+        document.getElementById('filterStatus').value
+    );
 });
 
 document.getElementById('resetBtn').addEventListener('click', () => {
-    document.getElementById('searchCodice').value = '';
-    document.getElementById('filterStatus').value = '';
+    document.getElementById('searchCodice').value  = '';
+    document.getElementById('filterStatus').value  = '';
     loadStock();
 });
 
 document.getElementById('exportBtn').addEventListener('click', () => {
-    if (stockData.length === 0) {
-        alert('Nessun dato da esportare');
-        return;
-    }
-    
-    const exportData = stockData.map(s => {
-        const materia = materiePrime.find(m => m.codice === s.codice_materiale);
+    if (!stockData.length) { alert('Nessun dato da esportare'); return; }
+    Utils.exportToCSV(stockData.map(s => {
+        const m = findMateria(s.codice_materiale);
         return {
-            codice: s.codice_materiale,
-            colore: materia ? materia.colore : '',
-            part_number: materia ? materia.part_number : '',
+            unique_id:            s.codice_materiale,
+            color_name:           m?.color_name  || '',
+            color_ref:            m?.color_ref   || '',
+            lego_size:            m?.lego_size   || '',
+            size_code:            m?.size_code   || '',
             quantita_disponibile: s.quantita_disponibile,
-            prezzo_medio: s.prezzo_medio,
-            valore_stock: s.quantita_disponibile * s.prezzo_medio
+            prezzo_medio_usd:     s.prezzo_medio || 0,
+            valore_stock_usd:     s.quantita_disponibile * (s.prezzo_medio || 0)
         };
-    });
-    
-    Utils.exportToCSV(exportData, `stock_magazzino_${new Date().toISOString().split('T')[0]}.csv`);
+    }), `stock_magazzino_${new Date().toISOString().split('T')[0]}.csv`);
 });
 
-// Carica dati all'avvio
+// ── Init ──────────────────────────────────────
 loadMateriePrime().then(() => loadStock());
