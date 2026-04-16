@@ -196,7 +196,7 @@ async function deleteMateria(id, uniqueId) {
         loadMateriePrime();
     } catch (error) {
         console.error('Errore eliminazione:', error);
-        Utils.showMessage('message', 'Errore durante l'eliminazione', 'error');
+        Utils.showMessage('message', "Errore durante l'eliminazione", 'error');
     }
 }
 
@@ -266,7 +266,7 @@ async function previewCSV() {
                 const lines = text.split('\\n').filter(line => line.trim());
                 
                 if (lines.length < 2) {
-                    alert('Il file CSV deve contenere almeno l'intestazione e una riga di dati');
+                    alert("Il file CSV deve contenere almeno l'intestazione e una riga di dati");
                     return;
                 }
                 
@@ -506,7 +506,7 @@ async function confirmImport() {
         
     } catch (error) {
         console.error('Errore importazione:', error);
-        Utils.showMessage('importMessage', 'Errore durante l'importazione: ' + error.message, 'error');
+        Utils.showMessage('importMessage', "Errore durante l'importazione: " + error.message, 'error');
         confirmBtn.disabled = false;
         confirmBtn.textContent = '✅ Importa Tutto';
     }
