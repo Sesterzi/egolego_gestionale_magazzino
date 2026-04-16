@@ -174,12 +174,20 @@ document.getElementById('submitOrdineBtn').addEventListener('click', async () =>
 
 // ── Salvataggio righe ─────────────────────────
 async function salvaCarichi(righe, { invoiceNo='', fornitore='', vat=0, dateOrdered=null, dateDelivered=null }) {
+    // Recupera tasso di cambio USD/EUR per la data dell'ordine (una sola chiamata per tutto l'ordine)
+    const dateForRate = dateOrdered || new Date().toISOString();
+    const exchangeRate = await getExchangeRate(dateForRate);
+
     for (const riga of righe) {
         const vatRiga   = riga.vat_applied !== undefined ? riga.vat_applied : vat;
         const transp    = riga.prezzo_incl_transport || riga.prezzo;
         const unitPrice = riga.unit_price || (riga.quantita > 0 ? riga.prezzo / riga.quantita : 0);
         const puTransp  = riga.quantita > 0 ? transp / riga.quantita : 0;
         const prezzoMedio = await calcolaPrezzoMedioUid(riga.unique_id, riga.quantita, transp);
+
+        // Valori EUR calcolati con il tasso storico
+        const prezzoTotEur  = exchangeRate ? riga.prezzo * exchangeRate : null;
+        const prezzoUnitEur = exchangeRate ? unitPrice   * exchangeRate : null;
 
         await API.createCarico({
             codice_materiale:          riga.unique_id,
@@ -192,7 +200,10 @@ async function salvaCarichi(righe, { invoiceNo='', fornitore='', vat=0, dateOrde
             invoice_number:            invoiceNo,
             fornitore:                 fornitore,
             data_carico:               dateOrdered || new Date().toISOString(),
-            date_delivered:            dateDelivered
+            date_delivered:            dateDelivered,
+            exchange_rate_usd_eur:     exchangeRate,
+            prezzo_totale_eur:         prezzoTotEur,
+            prezzo_unitario_eur:       prezzoUnitEur
         });
         await aggiornaStockUid(riga.unique_id, riga.quantita, prezzoMedio);
     }
@@ -459,9 +470,19 @@ document.getElementById('importConfirmBtn').addEventListener('click', async () =
     const btn = document.getElementById('importConfirmBtn');
     btn.disabled = true; btn.textContent = '⏳ Caricamento in corso...';
     try {
+        // Cache tasso di cambio: una sola chiamata API per data unica
+        const rateCache = {};
+        const getRate = async (dateISO) => {
+            if (!dateISO) return null;
+            const key = dateISO.split('T')[0];
+            if (rateCache[key] === undefined) rateCache[key] = await getExchangeRate(dateISO);
+            return rateCache[key];
+        };
+
         for (const r of righeValide) {
-            const vat = r.vatApplied !== undefined ? r.vatApplied : vatGlobale;
-            const prezzoMedio = await calcolaPrezzoMedioUid(r.uid, r.qty, r.transp);
+            const vat          = r.vatApplied !== undefined ? r.vatApplied : vatGlobale;
+            const exchangeRate = await getRate(r.dateOrdered);
+            const prezzoMedio  = await calcolaPrezzoMedioUid(r.uid, r.qty, r.transp);
             await API.createCarico({
                 codice_materiale:          r.uid,
                 quantita:                  r.qty,
@@ -472,7 +493,10 @@ document.getElementById('importConfirmBtn').addEventListener('click', async () =
                 prezzo_unitario_transport: r.qty > 0 ? r.transp / r.qty : 0,
                 invoice_number:            r.invoiceNo,
                 data_carico:               r.dateOrdered || new Date().toISOString(),
-                date_delivered:            r.dateDelivered
+                date_delivered:            r.dateDelivered,
+                exchange_rate_usd_eur:     exchangeRate,
+                prezzo_totale_eur:         exchangeRate ? r.prezzo    * exchangeRate : null,
+                prezzo_unitario_eur:       exchangeRate ? r.unitPrice * exchangeRate : null
             });
             await aggiornaStockUid(r.uid, r.qty, prezzoMedio);
         }

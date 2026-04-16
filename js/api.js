@@ -147,6 +147,21 @@ const API = {
     }
 };
 
+
+// ── Tasso di cambio storico USD/EUR (frankfurter.app) ─────
+async function getExchangeRate(dateISO) {
+    // dateISO: stringa ISO o oggetto Date → formatta come YYYY-MM-DD
+    const d = dateISO instanceof Date ? dateISO : new Date(dateISO);
+    const dateStr = d.toISOString().split('T')[0];
+    try {
+        const res  = await fetch(`https://api.frankfurter.app/${dateStr}?from=USD&to=EUR`);
+        const data = await res.json();
+        return data.rates?.EUR || null;
+    } catch (err) {
+        console.warn('Impossibile recuperare tasso di cambio per', dateStr, err);
+        return null;
+    }
+}
 // ============================================================
 //  Utils  (invariato)
 // ============================================================
