@@ -119,44 +119,66 @@ function renderCharts() {
 
 function renderChartSpesa() {
     if (!document.getElementById('chartSpesa')) return;
+
+    // Genera sempre gli ultimi 12 mesi come asse fisso
+    const months = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    }
+
     // Aggrega spesa per mese
     const byMonth = {};
+    months.forEach(m => { byMonth[m] = 0; }); // inizializza tutti a 0
     allCarichi.forEach(c => {
         const d = new Date(c.data_carico);
         const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        const val = currentCurrency === 'EUR' && c.prezzo_totale_eur
-            ? c.prezzo_totale_eur
-            : (currentCurrency === 'EUR' && currentRate
-                ? (c.prezzo_totale || 0) * currentRate
-                : (c.prezzo_totale || 0));
-        byMonth[key] = (byMonth[key] || 0) + val;
+        if (byMonth[key] !== undefined) { // solo se nel range 12 mesi
+            const val = currentCurrency === 'EUR' && c.prezzo_totale_eur
+                ? c.prezzo_totale_eur
+                : (currentCurrency === 'EUR' && currentRate
+                    ? (c.prezzo_totale || 0) * currentRate
+                    : (c.prezzo_totale || 0));
+            byMonth[key] += val;
+        }
     });
 
-    const labels = Object.keys(byMonth).sort();
-    const values = labels.map(k => byMonth[k]);
+    const values = months.map(k => byMonth[k]);
     const symbol = currentCurrency === 'EUR' ? '€' : '$';
+
+    // Colori: mesi con spesa in blu, mesi vuoti in grigio chiaro
+    const colors = values.map(v => v > 0
+        ? 'rgba(37, 99, 235, 0.75)'
+        : 'rgba(203, 213, 225, 0.5)');
 
     const ctx = document.getElementById('chartSpesa').getContext('2d');
     if (chartSpesa) chartSpesa.destroy();
     chartSpesa = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels.map(l => {
+            labels: months.map(l => {
                 const [y, m] = l.split('-');
                 return new Date(+y, +m-1).toLocaleDateString('it-IT', { month:'short', year:'2-digit' });
             }),
             datasets: [{
                 label: `Spesa (${currentCurrency})`,
                 data: values,
-                backgroundColor: 'rgba(37, 99, 235, 0.7)',
-                borderRadius: 6
+                backgroundColor: colors,
+                borderRadius: 4
             }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { ticks: { callback: v => symbol + v.toLocaleString() } }
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => symbol + v.toLocaleString() }
+                },
+                x: {
+                    grid: { display: false }
+                }
             }
         }
     });
